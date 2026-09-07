@@ -9,10 +9,12 @@
 
 ## GPU mode
 
-GPU acceleration is used by Faster-Whisper and RapidOCR. It requires a supported NVIDIA GPU and a current NVIDIA driver. The CUDA runtime pack is intentionally downloaded on demand through **Manage Resources** rather than bundled into the installer.
+GPU acceleration is used by Faster-Whisper, RapidOCR, and video export (NVIDIA NVENC). It requires a supported NVIDIA GPU and a current NVIDIA driver. The CUDA runtime pack is intentionally downloaded on demand through **Manage Resources** rather than bundled into the installer.
 
 No CUDA Toolkit installation is required when the CUDA runtime pack is installed.
 Faster-Whisper GPU execution requires CTranslate2 4.6.3 or newer for the CUDA 12.8 runtime pack.
+
+Video export leverages NVENC hardware encoding when available. On systems without an NVIDIA GPU, without CUDA drivers, or running AMD/Intel GPUs, export automatically falls back to CPU `libx264` encoding without requiring any additional installation.
 
 ## Resource Manager
 
@@ -26,6 +28,7 @@ Open **Manage Resources** from the launcher or Settings. It reports each resourc
 | Vietnamese Piper voices (`piper-new`, shared config) | `models/piper/` (`config.json` + `voices.json` + `.onnx`) |
 | English Piper voices | `models/piper-en/` |
 | Speaker diarization models | `models/pyannote/` |
+| Voice samples and voice catalogs | `assets/voices/`, `assets/capcut/` |
 
 ## Environment configuration
 

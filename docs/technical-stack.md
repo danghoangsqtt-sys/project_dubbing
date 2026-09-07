@@ -10,14 +10,16 @@
 | Speaker diarization | Sherpa-ONNX |
 | VAD | Silero VAD via Sherpa-ONNX |
 | Translation | Google Translate, OpenAI, Google AI Studio, and Ollama |
-| TTS | Piper and Edge TTS |
-| Video/audio processing | FFmpeg, pydub, NumPy, SciPy, librosa, soundfile |
+| TTS | Piper, Edge TTS, CapCut TTS, and VieNeu TTS (Voice Cloning) |
+| Video/audio processing | FFmpeg (NVENC GPU accelerated with CPU libx264 failover), pydub, NumPy, SciPy, librosa, soundfile |
+| External integrations | CapCut Draft project generator |
 | Packaging | PyInstaller |
 
 ## Processing notes
 
 - GPU Faster-Whisper uses CUDA when available, with standard inference as the safe path and optional batched inference controls.
 - RapidOCR uses one GPU inference worker to avoid competing CUDA sessions.
+- Video export implements an intelligent two-tier encoding strategy: dynamically selecting NVIDIA NVENC (`h264_nvenc` with p2–p5 presets) when supported, and falling back automatically to CPU `libx264` (with veryfast–slow presets and matched CRF) if NVENC or CUDA drivers are unavailable.
 - Timeline waveforms and thumbnails are generated once, cached per project/video, and reused during editing.
 - Speaker diarization runs only for audio-based transcription and is optional.
 
