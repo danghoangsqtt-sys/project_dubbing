@@ -1,0 +1,15 @@
+schema_version: 1
+enabled: false
+status: not_applicable
+reason: >-
+  CapCap is a single-user Windows desktop application. Stage communication uses
+  in-process Qt queued signals and persisted project state; Kafka would add an
+  unnecessary service and offline packaging burden.
+replacement:
+  event_transport: Qt queued signals
+  durable_state: versioned local project JSON
+  heavy_work_admission: single-process GPU stage scheduler
+topics: []
+future_trigger: >-
+  Revisit only if a separately approved multi-machine job-distribution milestone
+  establishes a real broker durability and consumer-scaling requirement.

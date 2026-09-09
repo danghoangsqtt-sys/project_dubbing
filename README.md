@@ -10,6 +10,18 @@
 
 CapCap hỗ trợ tạo **phụ đề tiếng Việt và tiếng Anh**, dịch nội dung video, tạo giọng đọc bằng TTS và chỉnh sửa các lớp nội dung theo thời gian trực tiếp trên timeline.
 
+## 🎯 Nhánh cá nhân: Trung/Anh → Việt trong 21 ngày
+
+Nhánh này tập trung vào nhu cầu sử dụng cá nhân trên **RTX 3060 12 GB / RAM 32 GB**: video tiếng Trung hoặc tiếng Anh → **phụ đề tiếng Việt và lồng tiếng tiếng Việt** trong một project có thể lưu, mở lại và kiểm duyệt từng cue.
+
+* **Tuần 1:** hoàn thành pipeline chính và hai smoke test Trung/Anh.
+* **Tuần 2:** kiểm thử, tối ưu tài nguyên/cache và đóng RC1.
+* **Tuần 3:** xác nhận chất lượng, đóng gói, kiểm tra license và viết báo cáo bằng số liệu.
+* **Mặc định:** Hybrid cho dịch; media, ASR, VieNeu TTS, mix và export chạy local. Có **Offline Lock** để chặn hoàn toàn kết nối ra ngoài.
+* **Ngoài mốc 21 ngày:** lip-sync, OmniVoice production, FunASR production và remote worker mở rộng.
+
+Tài liệu thực thi: [Project Context](.viepilot/PROJECT-CONTEXT.md), [Architecture](.viepilot/ARCHITECTURE.md), [Roadmap 21 ngày](.viepilot/ROADMAP.md), [Tracker](.viepilot/TRACKER.md) và [UI Design Direction](design.md).
+
 ## ✨ Điểm nổi bật
 
 * Quy trình xử lý trực quan theo từng bước: **Chuẩn bị → Chép lời → Dịch → TTS → Xuất video**
@@ -43,6 +55,10 @@ CapCap vẫn đang được phát triển tích cực, với nhiều tính năng
 * [Yêu cầu hệ thống và tài nguyên](docs/requirements.md)
 * [Công nghệ sử dụng](docs/technical-stack.md)
 * [Cấu trúc dự án](docs/project-structure.md)
+* [Requirements và phạm vi milestone](.viepilot/PROJECT-CONTEXT.md)
+* [Kiến trúc mục tiêu](.viepilot/ARCHITECTURE.md)
+* [Roadmap 21 ngày](.viepilot/ROADMAP.md)
+* [Quy chuẩn phát triển](.viepilot/SYSTEM-RULES.md)
 
 ## 🛠️ Chạy từ mã nguồn
 

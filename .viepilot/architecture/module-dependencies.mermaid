@@ -1,0 +1,15 @@
+flowchart TD
+  Views["ui/views + ui/widgets"] --> Controllers["ui/controllers"]
+  Views --> Workers["ui/worker_adapters"]
+  Controllers --> Runtime["app/workflows/WorkflowRuntime"]
+  Workers --> Runtime
+  Runtime --> Domain["app/core models + state"]
+  Runtime --> Services["app/services"]
+  Runtime --> Contracts["app/core engine protocols"]
+  Services --> Domain
+  Adapters["app/engines + processors"] --> Contracts
+  Runtime --> Adapters
+  Adapters --> External["FFmpeg, models, optional providers"]
+  Tests["tests"] -. verify .-> Domain
+  Tests -. verify .-> Services
+  Tests -. verify .-> Runtime

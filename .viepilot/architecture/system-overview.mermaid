@@ -1,0 +1,16 @@
+flowchart LR
+  U["Người dùng cá nhân"] --> UI["PySide6 Studio UI"]
+  UI --> C["Controllers + Worker Adapters"]
+  C --> WR["WorkflowRuntime"]
+  WR --> PS["ProjectService + ProjectState"]
+  WR --> GS["GPU Stage Scheduler"]
+  WR --> ASR["Faster-Whisper ASR"]
+  WR --> TR["Translation Orchestrator"]
+  WR --> TTS["VieNeu-TTS"]
+  WR --> MM["FFmpeg Media Pipeline"]
+  TR --> LOCAL["Ollama / Local provider"]
+  TR -. Hybrid only .-> CLOUD["OpenAI-compatible cloud provider"]
+  GS --> ASR
+  GS --> TTS
+  PS --> STORE["Local project JSON + artifacts + caches"]
+  MM --> STORE

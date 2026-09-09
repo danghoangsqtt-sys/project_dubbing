@@ -1,0 +1,25 @@
+sequenceDiagram
+  actor User
+  participant UI as Qt main thread
+  participant Worker as QThread worker
+  participant Runtime as WorkflowRuntime
+  participant Engine as Stage engine
+  participant State as ProjectState
+  User->>UI: Start or resume stage
+  UI->>Worker: Queue immutable stage request
+  Worker->>Runtime: Execute stage
+  Runtime->>State: Mark running + signature
+  Runtime->>Engine: Run with cancellation token
+  loop progress
+    Engine-->>Worker: Progress/status
+    Worker-->>UI: Queued signal
+  end
+  alt success
+    Engine-->>Runtime: Artifact + provenance
+    Runtime->>State: Atomic save; mark needs_review/done
+    Worker-->>UI: Result signal
+  else cancellation/error
+    Engine-->>Runtime: Cancelled or actionable error
+    Runtime->>State: Preserve prior artifacts; record state
+    Worker-->>UI: Cancelled/error signal
+  end

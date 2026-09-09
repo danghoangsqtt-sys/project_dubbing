@@ -1,0 +1,20 @@
+-- CapCap persistence contract
+-- Copyright 2026 CapCap contributors
+-- Licensed under Apache-2.0
+--
+-- DATABASE STATUS: NOT APPLICABLE TO THE 21-DAY MILESTONE.
+-- CapCap is a personal local-first desktop application. The authoritative store is
+-- versioned UTF-8 project JSON plus media artifacts and content-addressed manifests.
+-- Introducing SQLite/PostgreSQL would add migration and packaging risk without a
+-- current query/concurrency requirement.
+--
+-- Required file-backed logical entities:
+--   project(id, schema_version, source_fingerprint, languages, settings, steps, artifacts)
+--   segment(id, start, end, original_text, subtitle_vi, dubbing_vi, speaker_id,
+--           voice_profile_id, confidence, qa_flags, provenance, status)
+--   artifact(id, stage, path, input_signature, producer_provenance, validation, created_at)
+--   run(id, project_id, machine, resources, metrics, errors, started_at, finished_at)
+--
+-- Durability rule: write a sibling temporary file, flush, then os.replace; preserve a
+-- recoverable backup during schema migration. Do not add DDL in this milestone unless
+-- an approved architecture decision replaces the file-backed contract.

@@ -1,0 +1,14 @@
+flowchart TB
+  subgraph PC["Windows 10/11 workstation"]
+    APP["CapCap source-run or PyInstaller portable"]
+    GPU["RTX 3060 12 GB\nCUDA + NVENC"]
+    CPU["CPU + 32 GB RAM"]
+    RES["Pinned model/resource packs"]
+    DATA["User projects, cache, exports, logs"]
+    APP --> GPU
+    APP --> CPU
+    APP --> RES
+    APP --> DATA
+  end
+  APP -. "Hybrid profile; explicit provider only" .-> API["Cloud translation API"]
+  LOCK["Offline Lock"] -. "blocks all outbound requests" .-> APP

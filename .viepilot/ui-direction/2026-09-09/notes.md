@@ -126,3 +126,12 @@ The renders were checked for navigation visibility, clipped primary actions, sep
 - [x] Missing models and export blockers are visible before execution.
 - [x] All status colors include a textual label.
 - [x] Visual review at 1440×900 completed.
+
+## Crystallize export
+
+```yaml
+design_md_status: exported
+design_md_destination: design.md
+exported_at: 2026-09-09
+ui_direction_read_complete: true
+```

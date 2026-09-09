@@ -1,0 +1,50 @@
+{
+  "crystallize_version": "0.8.0",
+  "crystallized_at": "2026-09-09T23:12:27+07:00",
+  "project": {
+    "name": "CapCap",
+    "repository": "https://github.com/danghoangsqtt-sys/project_dubbing.git",
+    "branch": "main",
+    "profile_id": "personal",
+    "milestone": "Personal Usable v0.1",
+    "target_version": "0.1.0"
+  },
+  "execution": {
+    "status": "ready",
+    "current_phase": "01-core-feature-complete",
+    "next_task": "1.1",
+    "phase_count": 3,
+    "task_count": 27,
+    "feature_freeze_day": 7,
+    "final_day": 21
+  },
+  "workspace_reads": {
+    "brainstorm": "docs/brainstorm/session-2026-09-09.md",
+    "ui_direction_session": ".viepilot/ui-direction/2026-09-09",
+    "ui_direction_read_complete": true,
+    "ui_pages_count": 6,
+    "architect_workspace_present": false,
+    "stakeholder_review": "skipped-codex-adapter"
+  },
+  "design_md": {
+    "enabled": true,
+    "source": ".viepilot/ui-direction/2026-09-09/design.md",
+    "destination": "design.md",
+    "status": "exported"
+  },
+  "scope": {
+    "source_languages": ["zh", "en"],
+    "target_language": "vi",
+    "outputs": ["subtitle", "dubbing", "srt", "audio", "mp4", "report"],
+    "translation_profile": "hybrid-default-offline-lock-optional",
+    "tts_default": "VieNeu-TTS-v3-Turbo",
+    "deferred": ["OmniVoice production", "lip-sync", "FunASR production", "remote worker expansion", "plugin registry"]
+  },
+  "hardware": {
+    "gpu": "NVIDIA GeForce RTX 3060",
+    "vram_gb": 12,
+    "ram_gb": 32,
+    "cpu": "capture-in-task-1.1"
+  },
+  "next_command": "/vp-auto"
+}

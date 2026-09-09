@@ -1,0 +1,16 @@
+flowchart TD
+  U["Người dùng"] --> OPEN["Tạo/mở project video"]
+  OPEN --> PROFILE{"Hybrid hay Offline Lock?"}
+  PROFILE --> READY["Preflight model, FFmpeg, GPU, provider"]
+  READY --> ASR["Chép lời zh/en"]
+  ASR --> EDIT1["Sửa transcript/timestamp"]
+  EDIT1 --> TRAN["Tạo subtitle_vi + dubbing_vi"]
+  TRAN --> EDIT2["Lọc cảnh báo; sửa bản dịch"]
+  EDIT2 --> VOICE["Gán/nghe thử giọng VieNeu"]
+  VOICE --> GEN["Tạo cue + timing fit"]
+  GEN --> PRE["Preview ngắn; xử lý overflow"]
+  PRE --> EXPORT["Xuất SRT và/hoặc MP4"]
+  EXPORT --> REPORT["Lưu project, manifest và báo cáo"]
+  ASR -. cancel/resume .-> OPEN
+  TRAN -. selective rerun .-> EDIT2
+  GEN -. cue retry .-> PRE

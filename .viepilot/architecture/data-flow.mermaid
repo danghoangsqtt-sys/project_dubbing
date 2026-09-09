@@ -1,0 +1,18 @@
+flowchart LR
+  V["Local video"] --> P["Probe + input fingerprint"]
+  P --> A["Extract audio"]
+  A --> S["ASR zh/en"]
+  S --> O["original_text + timestamps + confidence"]
+  O --> SV["Translate subtitle"]
+  O --> DV["Rewrite dubbing"]
+  SV --> SUB["subtitle_vi"]
+  DV --> DUB["dubbing_vi"]
+  SUB --> REVIEW["Manual quality gate"]
+  DUB --> REVIEW
+  REVIEW --> SRT["UTF-8 SRT"]
+  REVIEW --> VT["VieNeu cue synthesis"]
+  VT --> FIT["Timing fit 0.92–1.12x"]
+  FIT --> MIX["Mix voice + background"]
+  MIX --> EXP["Single-pass MP4 export"]
+  SRT --> EXP
+  EXP --> REP["Manifest + benchmark/report evidence"]
