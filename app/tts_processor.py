@@ -7,6 +7,7 @@ import subprocess
 import threading
 import time
 import wave
+import audioop
 from pathlib import Path
 
 from dotenv import load_dotenv
@@ -318,10 +319,14 @@ def _validate_generated_wav(wav_path: str) -> None:
             channels = int(wav_file.getnchannels() or 0)
             frame_rate = int(wav_file.getframerate() or 0)
             frame_count = int(wav_file.getnframes() or 0)
+            sample_width = int(wav_file.getsampwidth() or 0)
+            frames = wav_file.readframes(min(frame_count, frame_rate * 10))
         if channels <= 0:
             raise RuntimeError("Generated WAV file has no audio channels.")
         if frame_rate <= 0 or frame_count <= 0:
             raise RuntimeError("Generated WAV file has no valid audio frames.")
+        if sample_width <= 0 or not frames or audioop.rms(frames, sample_width) <= 3:
+            raise RuntimeError("Generated WAV file contains silence only.")
     except RuntimeError:
         raise
     except Exception as exc:
@@ -593,7 +598,7 @@ def synthesize_text_to_wav_16k_mono(
     # Fast path for VieNeu voices
     if voice_to_search.startswith(("vieneu:", "vieneu_clone:")):
         from vieneu_tts import vieneu_synthesize_wav_16k_mono
-        return vieneu_synthesize_wav_16k_mono(
+        result = vieneu_synthesize_wav_16k_mono(
             text=text,
             wav_path=wav_path,
             voice_id=voice_to_search,
@@ -601,6 +606,8 @@ def synthesize_text_to_wav_16k_mono(
             tmp_dir=tmp_dir,
             on_progress=on_progress,
         )
+        _validate_generated_wav(result)
+        return result
 
     # Fast path for CapCut voices
     if voice_to_search.startswith("capcut:"):

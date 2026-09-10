@@ -1,4 +1,5 @@
 import json
+import importlib.metadata
 import os
 import re
 import shutil
@@ -11,6 +12,29 @@ from runtime_paths import app_path, asset_path, bin_path, models_path, temp_path
 
 _VIENEU_MODEL = None
 _VIENEU_MODEL_LOCK = threading.Lock()
+_VIENEU_INFER_LOCK = threading.Lock()
+
+VIENEU_MODEL_ID = "pnnbao-ump/VieNeu-TTS-v3-Turbo"
+VIENEU_MODE = "v3turbo"
+VIENEU_BACKEND = "onnx"
+
+
+def vieneu_provenance(*, voice_id: str = "", speed: float = 1.0) -> dict:
+    try:
+        package_version = importlib.metadata.version("vieneu")
+    except importlib.metadata.PackageNotFoundError:
+        package_version = "not-installed"
+    return {
+        "engine": "vieneu",
+        "model": VIENEU_MODEL_ID,
+        "revision": str(os.getenv("CAPCAP_VIENEU_REVISION", "v3-turbo") or "v3-turbo"),
+        "mode": VIENEU_MODE,
+        "backend": VIENEU_BACKEND,
+        "package_version": package_version,
+        "voice": str(voice_id or ""),
+        "speed": max(0.92, min(1.12, float(speed or 1.0))),
+        "sample_rate": 48000,
+    }
 
 VIENEU_PRESET_VOICE_META = {
     "Minh Đức": {
@@ -159,7 +183,7 @@ def get_cached_vieneu_model(on_progress: callable = None):
                 on_progress("Loading VieNeu-TTS v3 Turbo (ONNX)...")
             setup_vieneu_hf_env()
             from vieneu import Vieneu
-            _VIENEU_MODEL = Vieneu(mode="v3turbo", backend="onnx")
+            _VIENEU_MODEL = Vieneu(mode=VIENEU_MODE, backend=VIENEU_BACKEND)
             if on_progress:
                 on_progress("VieNeu-TTS loaded successfully.")
         return _VIENEU_MODEL
@@ -411,12 +435,14 @@ def vieneu_synthesize_wav_16k_mono(
     if ref_audio and os.path.exists(ref_audio):
         if on_progress:
             on_progress(f"Synthesizing with clone voice '{raw_stem}'...")
-        audio_data = model.infer(text.strip(), ref_audio=ref_audio, ref_text=ref_text or "")
+        with _VIENEU_INFER_LOCK:
+            audio_data = model.infer(text.strip(), ref_audio=ref_audio, ref_text=ref_text or "")
     else:
         preset_name = raw_stem if raw_stem in VIENEU_PRESET_VOICE_META else "Ngọc Huyền"
         if on_progress:
             on_progress(f"Synthesizing with preset voice '{preset_name}'...")
-        audio_data = model.infer(text.strip(), voice=preset_name)
+        with _VIENEU_INFER_LOCK:
+            audio_data = model.infer(text.strip(), voice=preset_name)
 
     import soundfile as sf
     from uuid import uuid4
@@ -424,22 +450,20 @@ def vieneu_synthesize_wav_16k_mono(
     try:
         sf.write(temp_48k_path, audio_data, 48000, subtype="PCM_16")
 
-        ffmpeg = _ffmpeg_path()
-        filter_args = []
-        speed_float = float(speed or 1.0)
-        if abs(speed_float - 1.0) >= 0.02 and 0.5 <= speed_float <= 2.0:
-            filter_args = ["-filter:a", f"atempo={speed_float}"]
-
-        cmd = [
-            ffmpeg, "-y", "-i", temp_48k_path,
-            *filter_args,
-            "-ar", "16000",
-            "-ac", "1",
-            wav_path,
-        ]
-        proc = subprocess.run(cmd, capture_output=True, **subprocess_text_kwargs())
-        if proc.returncode != 0:
-            raise RuntimeError(f"FFmpeg conversion to 16kHz failed: {proc.stderr or proc.stdout}")
+        speed_float = max(0.92, min(1.12, float(speed or 1.0)))
+        if abs(speed_float - 1.0) < 0.02:
+            os.replace(temp_48k_path, wav_path)
+        else:
+            ffmpeg = _ffmpeg_path()
+            cmd = [
+                ffmpeg, "-y", "-i", temp_48k_path,
+                "-filter:a", f"atempo={speed_float}",
+                "-c:a", "pcm_s16le",
+                wav_path,
+            ]
+            proc = subprocess.run(cmd, capture_output=True, **subprocess_text_kwargs())
+            if proc.returncode != 0:
+                raise RuntimeError(f"FFmpeg VieNeu timing conversion failed: {proc.stderr or proc.stdout}")
     finally:
         if os.path.exists(temp_48k_path):
             try:

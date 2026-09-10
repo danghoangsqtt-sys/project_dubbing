@@ -71,15 +71,15 @@ class VoiceWorkflow:
     # pool improves long projects without monopolising the CPU or disk.
     PIPER_TTS_WORKERS = 2
     AI_REWRITE_RATIO = 1.05
-    SMART_RETRY_RATIO = 1.15
+    SMART_RETRY_RATIO = 1.12
     HARD_RETRY_RATIO = 1.30
     HARD_OUTLIER_RATIO = 1.20
     RETRY_MIN_ACCEPT_RATIO = 0.88
     RESCUE_MIN_ACCEPT_RATIO = 0.88
     MAX_SAFE_SEGMENT_SPEED = 1.12
     MAX_STUBBORN_SEGMENT_SPEED = 1.10
-    TARGET_RATIO_FLOOR = 0.84
-    TARGET_RATIO_CEIL = 1.08
+    TARGET_RATIO_FLOOR = 0.92
+    TARGET_RATIO_CEIL = 1.12
 
     def __init__(self, workspace_root: str):
         self.workspace_root = workspace_root
@@ -248,6 +248,29 @@ class VoiceWorkflow:
 
     def _clamp_requested_speed(self, requested_speed: float) -> float:
         return clamp_requested_speed(requested_speed)
+
+    def audition_segment(
+        self,
+        segment: dict,
+        *,
+        output_wav_path: str,
+        voice_name: str = "vieneu:Adam",
+        speed: float = 1.0,
+        on_progress=None,
+        normalizer_dictionary=None,
+    ) -> str:
+        text = self._segment_tts_text(segment)
+        if not text:
+            raise ValueError("Cue has no Vietnamese dubbing text to audition.")
+        return self.engine_runtime.synthesize_segment(
+            text=text,
+            wav_path=output_wav_path,
+            voice=voice_name,
+            speed=self._clamp_requested_speed(speed),
+            tmp_dir=os.path.dirname(output_wav_path) or self.workspace_root,
+            on_progress=on_progress,
+            normalizer_dictionary=normalizer_dictionary,
+        )
 
     def _count_words(self, text: str) -> int:
         return len([token for token in re.split(r"\s+", str(text or "").strip()) if token])
@@ -567,6 +590,7 @@ class VoiceWorkflow:
         metrics["ratio"] = round(ratio, 3)
         metrics["attempt_count"] = int(max(1, attempt_count))
         metrics["action_taken"] = action_taken
+        metrics["timing_status"] = "ok" if self._is_target_ratio_band(ratio) else "needs_review"
         seg["_tts_metrics"] = metrics
         seg["subtitle_vi"] = (seg.get("subtitle_vi") or seg.get("text") or "").strip()
         seg["dubbing_vi"] = self._segment_tts_text(seg)
@@ -574,6 +598,12 @@ class VoiceWorkflow:
         seg["ratio"] = metrics["ratio"]
         seg["attempt_count"] = metrics["attempt_count"]
         seg["action_taken"] = metrics["action_taken"]
+        seg["timing_status"] = metrics["timing_status"]
+        if metrics["timing_status"] == "needs_review":
+            flags = list(seg.get("qa_flags", []) or [])
+            if "tts_timing_review" not in flags:
+                flags.append("tts_timing_review")
+            seg["qa_flags"] = flags
 
     def _rewrite_segment_with_ai(
         self,
@@ -850,6 +880,13 @@ class VoiceWorkflow:
             current["dubbing_vi"] = spoken_text
             current["subtitle_vi"] = subtitle_text
             current["voice_edited"] = voice_edited
+            if voice_provider == "vieneu":
+                from vieneu_tts import vieneu_provenance
+                provenance = dict(current.get("provenance", {}) or {})
+                provenance["tts"] = vieneu_provenance(
+                    voice_id=str(current.get("voice_name") or ""), speed=1.0
+                )
+                current["provenance"] = provenance
             final_spoken_words = spoken_words
             current["_tts_metrics"] = {
                 "duration_sec": round(duration_sec, 3),
@@ -950,12 +987,12 @@ class VoiceWorkflow:
             if not wav_path or not os.path.exists(wav_path):
                 adjusted_wavs.append(wav_path)
                 continue
-            seg_speed = float(voice_speed)
+            seg_speed = self._clamp_requested_speed(float(voice_speed))
             if segments and idx < len(segments):
                 try:
                     raw = segments[idx].get("voice_speed")
                     if raw is not None:
-                        seg_speed = float(raw)
+                        seg_speed = self._clamp_requested_speed(float(raw))
                 except (TypeError, ValueError):
                     pass
             if abs(seg_speed - 1.0) < 0.02:
@@ -1011,7 +1048,7 @@ class VoiceWorkflow:
                 speech_cost=speech_cost,
                 ratio=ratio,
             ):
-                speed_ratio = min(1.15, max(1.0, ratio))
+                speed_ratio = min(1.12, max(1.0, ratio))
                 if abs(speed_ratio - 1.0) >= 0.02:
                     adjusted_path = os.path.join(tmp_dir, f"seg_{idx:04d}_polish_speed.wav")
                     wav_path = self.engine_runtime.change_wav_speed(
@@ -1597,7 +1634,7 @@ class VoiceWorkflow:
         output_dir: str,
         background_path: str = "",
         audio_handling_mode: str = "fast",
-        voice_name: str = "ngochuyen",
+        voice_name: str = "vieneu:Adam",
         voice_speed: float = 1.0,
         timing_sync_mode: str = "off",
         original_volume: int = 50,
