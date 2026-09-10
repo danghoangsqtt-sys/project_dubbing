@@ -5,17 +5,17 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.8 — Workspace UI direction (`in_progress`)
-- **Last activity:** 2026-09-10 — Task 1.7 completed; approved Launcher direction rendered and 53 total tests passed
+- **Current task:** 1.9 — Transcript & Translation UI direction (`not_started`)
+- **Last activity:** 2026-09-10 — Task 1.8 completed; Workspace direction aligned and 61 total tests passed
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
 
 ```text
-Phase 1 — Core Feature Complete         [#####-----] 7/13
+Phase 1 — Core Feature Complete         [######----] 8/13
 Phase 2 — RC1 Stability & Performance   [----------] 0/7
 Phase 3 — Validation, Package & Report  [----------] 0/7
-Overall                                 [###-------] 7/27
+Overall                                 [###-------] 8/27
 ```
 
 Existing upstream capabilities are the brownfield baseline; percentages track this 21-day stabilization milestone only.
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Complete and verify Workspace UI Direction Task 1.8, then continue automatically to Transcript/Translation UI Task 1.9.
+Start Transcript/Translation UI Direction Task 1.9 and preserve the three independent text fields through edit/save/rerun.

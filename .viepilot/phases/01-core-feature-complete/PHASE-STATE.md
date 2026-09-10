@@ -1,9 +1,9 @@
 # Phase 1 State
 
 - **Status:** In progress
-- **Progress:** 7/13 tasks
+- **Progress:** 8/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.8 — Workspace UI direction (`in_progress`)
+- **Current task:** 1.9 — Transcript & Translation UI direction (`not_started`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -21,6 +21,8 @@
 - `docs/vieneu-timing.md` — VieNeu engine and timing-fit boundary
 - `tests/test_launcher_ui.py` — Task 1.7 launcher state/drop/offscreen contract (4/4 pass, 2026-09-10)
 - `artifacts/evidence/task-1.7-launcher.png` — reviewed production Launcher render
+- `tests/test_workspace_ui.py` — Task 1.8 stage/navigation/stop-resume/offscreen contract (8/8 pass, 2026-09-10)
+- `docs/ui-workspace.md` — Workspace state, operation and recovery behavior
 
 ## Task status
 
@@ -33,7 +35,7 @@
 | 1.5 | Done | Atomic SRT, ffprobe validation, NVENC fallback and one final encode; `3e9a3ea` |
 | 1.6 | Done | VieNeu v3 Turbo default, serialized inference, 48 kHz, silence rejection and 0.92–1.12x timing; `c15b741` |
 | 1.7 | Done | Vietnamese readiness/resume/drop launcher aligned with approved direction; `8dbfa60` |
-| 1.8 | In progress | Approved workspace navigation/stage/progress/stop-resume UI underway |
+| 1.8 | Done | Vietnamese five-stage Workspace, observable progress/log and cooperative stop/resume; `f2f6fc6` |
 | 1.9 | Not started | — |
 | 1.10 | Not started | — |
 | 1.11 | Not started | — |
@@ -107,3 +109,12 @@
 | 1.7 | `docs/ui-launcher.md` |
 | 1.7 | `artifacts/evidence/task-1.7-launcher.png` |
 | 1.7 | `artifacts/evidence/day-1-preflight.json` |
+| 1.8 | `.viepilot/phases/01-core-feature-complete/tasks/1.8.md` |
+| 1.8 | `ui/views/main_window.py` |
+| 1.8 | `ui/views/start_panel.py` |
+| 1.8 | `ui/main_window.py` |
+| 1.8 | `ui/controllers/pipeline_controller.py` |
+| 1.8 | `ui/widgets/progress_dialog.py` |
+| 1.8 | `tests/test_workspace_ui.py` |
+| 1.8 | `docs/ui-workspace.md` |
+| 1.8 | `artifacts/evidence/day-1-preflight.json` |

@@ -14,6 +14,7 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 - Xuất SRT UTF-8 atomic và báo cáo ffprobe/encoder cho video đầu ra.
 - Cue audition VieNeu dùng chung biên tổng hợp đã xác thực và lưu provenance model/voice/tốc độ.
 - Launcher tiếng Việt theo UI Direction với thẻ thiết bị/profile/tài nguyên, tiến độ dự án gần đây và kéo-thả video local.
+- Workspace tiếng Việt với điều hướng project, thanh năm giai đoạn, phần trăm tổng thể và các nút mở nhật ký, dừng hoặc tiếp tục tác vụ.
 
 ### Changed
 
@@ -21,6 +22,7 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 - VieNeu-TTS v3 Turbo là TTS mặc định; Hybrid là profile dịch mặc định; Offline Lock là tùy chọn riêng tư.
 - Lưu project và JSON artifact theo cơ chế atomic replace; project cũ được sao lưu trước khi tự động migrate và có thể phục hồi segment từ artifact legacy.
 - Transcript cache nay bị vô hiệu hóa khi model revision hoặc cấu hình suy luận ASR thay đổi; auto-detect bị chặn trong luồng zh/en đã khóa.
+- Dừng pipeline nay dùng yêu cầu ngắt hợp tác và chờ có giới hạn; trạng thái dừng/lỗi được lưu để tiếp tục mà không bỏ các artifact đã hoàn tất.
 
 ### Fixed
 
