@@ -456,6 +456,10 @@ class PrepareWorkflow:
             transcribe_elapsed = time.perf_counter() - transcribe_started
             print(f"Success: Generated {len(segment_models)} segments via OCR.")
             print(f"[Timing] OCR step: {transcribe_elapsed:.2f}s")
+            for segment in segment_models:
+                if not segment.source_language:
+                    segment.source_language = str(source_language or "").strip().lower()
+            project_state.set_segments(segment_models)
             if not reused_ocr:
                 self.project_service.save_json_artifact(
                     project_state,
@@ -881,6 +885,10 @@ class PrepareWorkflow:
             transcribe_elapsed = time.perf_counter() - transcribe_started
             print(f"Success: Generated {len(segment_models)} segments.")
             print(f"[Timing] Transcribe step: {transcribe_elapsed:.2f}s")
+            for segment in segment_models:
+                if not segment.source_language:
+                    segment.source_language = str(source_language or "").strip().lower()
+            project_state.set_segments(segment_models)
             self.project_service.save_json_artifact(
                 project_state,
                 "transcript_raw",
@@ -1061,7 +1069,11 @@ class PrepareWorkflow:
                         os.path.join("translation", "translation_final.json"),
                         segment_models,
                     )
+                project_state.set_segments(segment_models)
                 project_state.set_setting("translation_signature", translation_signature)
+                translation_provenance = self.project_service.build_translation_provenance()
+                translation_provenance["input_signature"] = translation_signature
+                project_state.set_provenance("translation", translation_provenance)
                 project_state.set_step_status("translate_raw", "done")
                 project_state.set_step_status("refine_translation", "done" if optimize_subtitles else "skipped")
                 self.project_service.save_project(project_state)

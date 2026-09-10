@@ -2,6 +2,7 @@ from __future__ import annotations
 
 import os
 
+from core.models import Segment
 from services.segment_service import SegmentService
 
 
@@ -46,6 +47,10 @@ class GUIProjectBridge:
         if not state:
             return []
         segment_models = self.segment_service.transcript_dicts_to_models(raw_segments)
+        for segment in segment_models:
+            if not segment.source_language:
+                segment.source_language = str(state.input_language or "").strip().lower()
+        state.set_segments(segment_models)
         self.project_service.save_json_artifact(
             state,
             "transcript_raw",
@@ -67,6 +72,7 @@ class GUIProjectBridge:
         if not state:
             return []
         models = self.segment_service.apply_translations(base_models, translated_segments)
+        state.set_segments(models)
 
         self.project_service.save_segment_artifact(
             state,
@@ -121,6 +127,20 @@ class GUIProjectBridge:
         context["last_music_path"] = state.artifacts.get("music", "")
         context["last_voice_vi_path"] = state.artifacts.get("voice_vi", "")
         context["last_mixed_vi_path"] = state.artifacts.get("mixed_vi", "")
+
+        if state.segments:
+            # Use copies at the UI boundary so widget edits cannot mutate the
+            # authoritative project state without an explicit persist action.
+            canonical_models = [Segment.from_dict(segment.to_dict()) for segment in state.segments]
+            context["current_segment_models"] = canonical_models
+            context["current_segments"] = [segment.to_original_subtitle_dict() for segment in canonical_models]
+            if any(segment.subtitle_vi or segment.dubbing_vi for segment in canonical_models):
+                translated_models = [Segment.from_dict(segment.to_dict()) for segment in canonical_models]
+                context["current_translated_segment_models"] = translated_models
+                context["current_translated_segments"] = [
+                    segment.to_subtitle_dict() for segment in translated_models
+                ]
+            return context
 
         transcript_json = state.artifacts.get("transcript_segments")
         if transcript_json and os.path.exists(transcript_json):
