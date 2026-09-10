@@ -5,17 +5,17 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.4 — Repair translation and dubbing pipeline P0s (`in_progress`)
-- **Last activity:** 2026-09-10 — Task 1.4 contract locked after confirming four translation/dubbing P0 paths
+- **Current task:** 1.5 — Independent SRT and single-pass media/export foundation (`ready`)
+- **Last activity:** 2026-09-10 — Task 1.4 completed; Hybrid/Offline Lock, optimization, protected facts and independent dubbing passed 37 tests
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
 
 ```text
-Phase 1 — Core Feature Complete         [##--------] 3/13
+Phase 1 — Core Feature Complete         [###-------] 4/13
 Phase 2 — RC1 Stability & Performance   [----------] 0/7
 Phase 3 — Validation, Package & Report  [----------] 0/7
-Overall                                 [#---------] 3/27
+Overall                                 [#---------] 4/27
 ```
 
 Existing upstream capabilities are the brownfield baseline; percentages track this 21-day stabilization milestone only.
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Complete and verify Task 1.4, then continue automatically to Task 1.5.
+Start Task 1.5: independent UTF-8 SRT plus probed single-pass NVENC/libx264 export.

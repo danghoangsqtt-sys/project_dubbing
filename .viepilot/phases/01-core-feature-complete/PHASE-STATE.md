@@ -1,9 +1,9 @@
 # Phase 1 State
 
 - **Status:** In progress
-- **Progress:** 3/13 tasks
+- **Progress:** 4/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.4 — Repair translation and dubbing pipeline P0s (`in_progress`)
+- **Current task:** 1.5 — Independent SRT and single-pass media/export foundation (`ready`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -15,6 +15,7 @@
 - `docs/project-state-schema.md` — schema v2 and recovery contract
 - `tests/test_asr_contract.py` — Task 1.3 explicit-language/config/provenance contract (7/7 pass, 2026-09-10)
 - `docs/asr-transcription.md` — locked zh/en Faster-Whisper behavior and runtime provenance
+- `tests/test_translation_contract.py` — Task 1.4 hybrid/offline/mapping/dubbing contract (7/7 pass, 2026-09-10)
 
 ## Task status
 
@@ -23,8 +24,8 @@
 | 1.1 | Done | `artifacts/evidence/day-1-preflight.json`; final state at the Task 1.1 done tag |
 | 1.2 | Done | Schema v2 migration, atomic persistence and provenance signatures; `b315f69` |
 | 1.3 | Done | Explicit zh/en, eager inference, editable cues and ASR provenance; `0d6f2fb` |
-| 1.4 | In progress | Hybrid/offline/mapping/optimization/dubbing repair underway |
-| 1.5 | Not started | — |
+| 1.4 | Done | Hybrid/offline policy, optimization, stable mapping and independent dubbing; `545b31e` |
+| 1.5 | Ready | Independent SRT and single-pass export foundation |
 | 1.6 | Not started | — |
 | 1.7 | Not started | — |
 | 1.8 | Not started | — |
@@ -67,3 +68,16 @@
 | 1.3 | `tests/test_asr_contract.py` |
 | 1.3 | `docs/asr-transcription.md` |
 | 1.3 | `artifacts/evidence/day-1-preflight.json` |
+| 1.4 | `.viepilot/phases/01-core-feature-complete/tasks/1.4.md` |
+| 1.4 | `app/network_policy.py` |
+| 1.4 | `app/translation/orchestrator.py` |
+| 1.4 | `app/translation/providers/gemini_polisher.py` |
+| 1.4 | `app/translation/providers/google_web_translator.py` |
+| 1.4 | `app/translation/srt_utils.py` |
+| 1.4 | `app/translation/validation.py` |
+| 1.4 | `app/workflows/prepare_workflow.py` |
+| 1.4 | `app/workflows/voice_workflow.py` |
+| 1.4 | `ui/main_window.py` |
+| 1.4 | `ui/worker_adapters/processing_workers.py` |
+| 1.4 | `tests/test_translation_contract.py` |
+| 1.4 | `docs/translation-profiles.md` |

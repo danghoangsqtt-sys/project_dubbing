@@ -22,6 +22,8 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 ### Fixed
 
 - Cache signature dịch/TTS nay bao gồm producer/model/revision/prompt/schema/normalizer và stable cue input; thay đổi chỉ thuộc mix không làm mất cache TTS.
+- Hybrid translation nay fallback có cảnh báo; Offline Lock chặn cloud/Google tại provider boundary và chỉ cho phép loopback Ollama.
+- `optimize_subtitles` không còn bị ép tắt; cue ID, tên/sản phẩm Latin và số được kiểm tra, còn TTS ưu tiên `dubbing_vi` độc lập với phụ đề.
 
 ## [0.0.0] - 2026-09-09
 
