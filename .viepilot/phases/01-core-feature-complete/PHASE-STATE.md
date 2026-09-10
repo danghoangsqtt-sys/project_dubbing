@@ -3,7 +3,7 @@
 - **Status:** In progress
 - **Progress:** 3/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.4 — Repair translation and dubbing pipeline P0s (`ready`)
+- **Current task:** 1.4 — Repair translation and dubbing pipeline P0s (`in_progress`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -23,7 +23,7 @@
 | 1.1 | Done | `artifacts/evidence/day-1-preflight.json`; final state at the Task 1.1 done tag |
 | 1.2 | Done | Schema v2 migration, atomic persistence and provenance signatures; `b315f69` |
 | 1.3 | Done | Explicit zh/en, eager inference, editable cues and ASR provenance; `0d6f2fb` |
-| 1.4 | Ready | Translation/dubbing P0 repair |
+| 1.4 | In progress | Hybrid/offline/mapping/optimization/dubbing repair underway |
 | 1.5 | Not started | — |
 | 1.6 | Not started | — |
 | 1.7 | Not started | — |

@@ -5,8 +5,8 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.4 — Repair translation and dubbing pipeline P0s (`ready`)
-- **Last activity:** 2026-09-10 — Task 1.3 completed; explicit zh/en ASR, editable cues and full runtime/model provenance passed 30 tests
+- **Current task:** 1.4 — Repair translation and dubbing pipeline P0s (`in_progress`)
+- **Last activity:** 2026-09-10 — Task 1.4 contract locked after confirming four translation/dubbing P0 paths
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Start Task 1.4: repair hybrid/offline translation, dubbing rewrite, optimization propagation, and ID/name/number validation.
+Complete and verify Task 1.4, then continue automatically to Task 1.5.
