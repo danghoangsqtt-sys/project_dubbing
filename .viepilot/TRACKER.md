@@ -5,7 +5,7 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.5 — Independent SRT and single-pass media/export foundation (`ready`)
+- **Current task:** 1.5 — Independent SRT and single-pass media/export foundation (`in_progress`)
 - **Last activity:** 2026-09-10 — Task 1.4 completed; Hybrid/Offline Lock, optimization, protected facts and independent dubbing passed 37 tests
 - **Feature freeze:** Planned at end of Day 7
 
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Start Task 1.5: independent UTF-8 SRT plus probed single-pass NVENC/libx264 export.
+Complete and verify Task 1.5, then continue automatically to Task 1.6.

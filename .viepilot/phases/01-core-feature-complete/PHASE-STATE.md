@@ -3,7 +3,7 @@
 - **Status:** In progress
 - **Progress:** 4/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.5 — Independent SRT and single-pass media/export foundation (`ready`)
+- **Current task:** 1.5 — Independent SRT and single-pass media/export foundation (`in_progress`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -25,7 +25,7 @@
 | 1.2 | Done | Schema v2 migration, atomic persistence and provenance signatures; `b315f69` |
 | 1.3 | Done | Explicit zh/en, eager inference, editable cues and ASR provenance; `0d6f2fb` |
 | 1.4 | Done | Hybrid/offline policy, optimization, stable mapping and independent dubbing; `545b31e` |
-| 1.5 | Ready | Independent SRT and single-pass export foundation |
+| 1.5 | In progress | SRT/probe/encoder/single-pass contract underway |
 | 1.6 | Not started | — |
 | 1.7 | Not started | — |
 | 1.8 | Not started | — |

@@ -10,17 +10,17 @@
     "target_version": "0.1.0"
   },
   "execution": {
-    "status": "ready",
+    "status": "in_progress",
     "current_phase": "01-core-feature-complete",
-    "current_task": "1.4-complete",
-    "next_task": "1.5",
+    "current_task": "1.5",
+    "next_task": "1.6",
     "phase_count": 3,
     "task_count": 27,
     "tasks_completed": 4,
     "feature_freeze_day": 7,
     "final_day": 21,
     "updated_at": "2026-09-10T08:30:00+07:00",
-    "last_evidence": "tests/test_translation_contract.py"
+    "last_evidence": ".viepilot/phases/01-core-feature-complete/tasks/1.5.md"
   },
   "workspace_reads": {
     "brainstorm": "docs/brainstorm/session-2026-09-09.md",
