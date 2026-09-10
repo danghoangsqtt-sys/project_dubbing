@@ -5,17 +5,17 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.5 — Independent SRT and single-pass media/export foundation (`in_progress`)
-- **Last activity:** 2026-09-10 — Task 1.4 completed; Hybrid/Offline Lock, optimization, protected facts and independent dubbing passed 37 tests
+- **Current task:** 1.6 — VieNeu cue pipeline and timing fit (`ready`)
+- **Last activity:** 2026-09-10 — Task 1.5 completed; atomic SRT, ffprobe validation and single-pass export passed 42 tests
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
 
 ```text
-Phase 1 — Core Feature Complete         [###-------] 4/13
+Phase 1 — Core Feature Complete         [####------] 5/13
 Phase 2 — RC1 Stability & Performance   [----------] 0/7
 Phase 3 — Validation, Package & Report  [----------] 0/7
-Overall                                 [#---------] 4/27
+Overall                                 [##--------] 5/27
 ```
 
 Existing upstream capabilities are the brownfield baseline; percentages track this 21-day stabilization milestone only.
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Complete and verify Task 1.5, then continue automatically to Task 1.6.
+Start Task 1.6: VieNeu v3 Turbo cue synthesis, silence rejection and bounded timing fit.

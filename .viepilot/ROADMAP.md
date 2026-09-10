@@ -13,7 +13,7 @@
 
 **Goal:** Both Chinese→Vietnamese and English→Vietnamese produce editable SRT and a playable dubbed MP4, with save/reopen and visible failure recovery.
 
-**Status:** In progress — 4/13 tasks complete; ASR and translation/dubbing P0 contracts passed on 2026-09-10.
+**Status:** In progress — 5/13 tasks complete; ASR, translation and media foundations passed on 2026-09-10.
 
 | Task | Day | Description | Acceptance criteria | Size |
 |---|---:|---|---|---|
@@ -102,7 +102,7 @@ Get-FileHash -Algorithm SHA256 dist/CapCap-0.1.0.zip
 
 | Phase | Status | Tasks | Completed | Progress |
 |---|---|---:|---:|---:|
-| 1. Core Feature Complete | In progress | 13 | 4 | 31% |
+| 1. Core Feature Complete | In progress | 13 | 5 | 38% |
 | 2. RC1 Stability & Performance | Not started | 7 | 0 | 0% |
 | 3. Validation, Package & Report | Not started | 7 | 0 | 0% |
 

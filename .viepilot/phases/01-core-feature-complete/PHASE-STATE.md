@@ -1,9 +1,9 @@
 # Phase 1 State
 
 - **Status:** In progress
-- **Progress:** 4/13 tasks
+- **Progress:** 5/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.5 — Independent SRT and single-pass media/export foundation (`in_progress`)
+- **Current task:** 1.6 — VieNeu cue pipeline and timing fit (`ready`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -16,6 +16,7 @@
 - `tests/test_asr_contract.py` — Task 1.3 explicit-language/config/provenance contract (7/7 pass, 2026-09-10)
 - `docs/asr-transcription.md` — locked zh/en Faster-Whisper behavior and runtime provenance
 - `tests/test_translation_contract.py` — Task 1.4 hybrid/offline/mapping/dubbing contract (7/7 pass, 2026-09-10)
+- `tests/test_media_export_contract.py` — Task 1.5 atomic SRT/probe/single-pass contract (5/5 pass, 2026-09-10)
 
 ## Task status
 
@@ -25,8 +26,8 @@
 | 1.2 | Done | Schema v2 migration, atomic persistence and provenance signatures; `b315f69` |
 | 1.3 | Done | Explicit zh/en, eager inference, editable cues and ASR provenance; `0d6f2fb` |
 | 1.4 | Done | Hybrid/offline policy, optimization, stable mapping and independent dubbing; `545b31e` |
-| 1.5 | In progress | SRT/probe/encoder/single-pass contract underway |
-| 1.6 | Not started | — |
+| 1.5 | Done | Atomic SRT, ffprobe validation, NVENC fallback and one final encode; `3e9a3ea` |
+| 1.6 | Ready | VieNeu cue pipeline and timing fit |
 | 1.7 | Not started | — |
 | 1.8 | Not started | — |
 | 1.9 | Not started | — |
@@ -81,3 +82,9 @@
 | 1.4 | `ui/worker_adapters/processing_workers.py` |
 | 1.4 | `tests/test_translation_contract.py` |
 | 1.4 | `docs/translation-profiles.md` |
+| 1.5 | `app/media_contract.py` |
+| 1.5 | `app/subtitle_builder.py` |
+| 1.5 | `app/engines/subtitle_adapter.py` |
+| 1.5 | `app/workflows/export_workflow.py` |
+| 1.5 | `tests/test_media_export_contract.py` |
+| 1.5 | `docs/media-export.md` |

@@ -11,6 +11,7 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 - Quy trình dựng `.venv` Python 3.11 tái lập được, bộ kiểm tra preflight phần cứng/runtime và báo cáo bằng chứng Day 1.
 - Schema project/segment v2 với ba trường văn bản độc lập, stable cue ID, provenance theo stage và hướng dẫn migration/recovery.
 - Hợp đồng Faster-Whisper cục bộ cho `zh`/`en` với cấu hình/model revision, confidence và provenance trên từng cue.
+- Xuất SRT UTF-8 atomic và báo cáo ffprobe/encoder cho video đầu ra.
 
 ### Changed
 
@@ -24,6 +25,7 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 - Cache signature dịch/TTS nay bao gồm producer/model/revision/prompt/schema/normalizer và stable cue input; thay đổi chỉ thuộc mix không làm mất cache TTS.
 - Hybrid translation nay fallback có cảnh báo; Offline Lock chặn cloud/Google tại provider boundary và chỉ cho phép loopback Ollama.
 - `optimize_subtitles` không còn bị ép tắt; cue ID, tên/sản phẩm Latin và số được kiểm tra, còn TTS ưu tiên `dubbing_vi` độc lập với phụ đề.
+- Export kết hợp dùng stream-copy ở mux trung gian, chỉ encode video ở lượt cuối và chỉ báo thành công sau khi ffprobe hợp lệ.
 
 ## [0.0.0] - 2026-09-09
 

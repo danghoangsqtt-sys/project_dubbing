@@ -10,17 +10,17 @@
     "target_version": "0.1.0"
   },
   "execution": {
-    "status": "in_progress",
+    "status": "ready",
     "current_phase": "01-core-feature-complete",
-    "current_task": "1.5",
+    "current_task": "1.5-complete",
     "next_task": "1.6",
     "phase_count": 3,
     "task_count": 27,
-    "tasks_completed": 4,
+    "tasks_completed": 5,
     "feature_freeze_day": 7,
     "final_day": 21,
     "updated_at": "2026-09-10T08:30:00+07:00",
-    "last_evidence": ".viepilot/phases/01-core-feature-complete/tasks/1.5.md"
+    "last_evidence": "tests/test_media_export_contract.py"
   },
   "workspace_reads": {
     "brainstorm": "docs/brainstorm/session-2026-09-09.md",
@@ -50,5 +50,5 @@
     "ram_gb": 32,
     "cpu": "12th Gen Intel(R) Core(TM) i7-12700"
   },
-  "next_command": "/vp-auto --task 1.5"
+  "next_command": "/vp-auto --task 1.6"
 }
