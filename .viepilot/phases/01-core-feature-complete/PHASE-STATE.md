@@ -3,7 +3,7 @@
 - **Status:** In progress
 - **Progress:** 1/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.2 — Canonical segment/state/provenance migration (`ready`)
+- **Current task:** 1.2 — Canonical segment/state/provenance migration (`in_progress`, started 2026-09-10)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -17,7 +17,7 @@
 | Task | Status | Evidence/notes |
 |---|---|---|
 | 1.1 | Done | `artifacts/evidence/day-1-preflight.json`; final state at the Task 1.1 done tag |
-| 1.2 | Ready | Canonical segment/state/provenance migration |
+| 1.2 | In progress | Contract: `tasks/1.2.md`; migration implementation underway |
 | 1.3 | Not started | — |
 | 1.4 | Not started | — |
 | 1.5 | Not started | — |

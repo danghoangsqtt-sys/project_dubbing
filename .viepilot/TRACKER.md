@@ -5,8 +5,8 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.2 — Canonical segment/state/provenance migration (`ready`)
-- **Last activity:** 2026-09-10 — Task 1.1 completed; Python 3.11 baseline and Day 1 preflight passed
+- **Current task:** 1.2 — Canonical segment/state/provenance migration (`in_progress`)
+- **Last activity:** 2026-09-10 — Task 1.2 contract refined; schema/persistence discovery completed
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
