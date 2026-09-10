@@ -4,10 +4,11 @@ import os
 import json
 import time
 import shutil
-import hashlib
 import re
+import threading
+from pathlib import Path
 
-from PySide6.QtCore import Qt, QTimer
+from PySide6.QtCore import Qt, QTimer, Signal
 from PySide6.QtGui import QPixmap
 from PySide6.QtWidgets import (
     QDialog,
@@ -16,6 +17,7 @@ from PySide6.QtWidgets import (
     QGridLayout,
     QHBoxLayout,
     QLabel,
+    QProgressBar,
     QPushButton,
     QScrollArea,
     QSizePolicy,
@@ -24,6 +26,81 @@ from PySide6.QtWidgets import (
 )
 
 from runtime_paths import asset_path, subprocess_hidden_kwargs, workspace_root
+
+
+SUPPORTED_VIDEO_EXTENSIONS = {".mp4", ".mkv", ".avi", ".mov", ".webm"}
+PIPELINE_STAGES = (
+    "extract_audio", "transcribe", "translate_raw", "refine_translation",
+    "separate_audio", "generate_tts", "build_subtitle", "mix_audio", "export",
+)
+
+
+def _project_state_path(video_path: str) -> str:
+    name = os.path.splitext(os.path.basename(video_path))[0] or "project"
+    slug = re.sub(r"[^a-zA-Z0-9]+", "_", name).strip("_").lower() or "project"
+    digest = hashlib.sha1(os.path.abspath(video_path).encode("utf-8")).hexdigest()[:8]
+    return os.path.join(workspace_root(), "projects", f"{slug}_{digest}", "project.json")
+
+
+def _read_project_state(video_path: str) -> dict:
+    try:
+        with open(os.path.normpath(_project_state_path(video_path)), "r", encoding="utf-8") as handle:
+            payload = json.load(handle)
+        return payload if isinstance(payload, dict) else {}
+    except (OSError, ValueError, TypeError):
+        return {}
+
+
+def _format_duration(seconds: float) -> str:
+    total = max(0, int(round(float(seconds or 0))))
+    hours, remainder = divmod(total, 3600)
+    minutes, secs = divmod(remainder, 60)
+    return f"{hours:d}:{minutes:02d}:{secs:02d}" if hours else f"{minutes:02d}:{secs:02d}"
+
+
+def project_card_summary(video_path: str) -> dict:
+    """Build read-only, deterministic launcher state for one recent project."""
+    state = _read_project_state(video_path)
+    artifacts = dict(state.get("artifacts") or {})
+    steps = dict(state.get("steps") or {})
+    segments = list(state.get("segments") or state.get("current_segments") or [])
+    completed = sum(1 for stage in PIPELINE_STAGES if str(steps.get(stage, "")).lower() == "done")
+    progress = int(round((completed / len(PIPELINE_STAGES)) * 100)) if state else 0
+    status = "Sẵn sàng"
+    tone = "neutral"
+    resume = "Bắt đầu xử lý"
+    if artifacts.get("final_video") or str(steps.get("export", "")).lower() == "done":
+        status, tone, progress, resume = "Đã xuất", "done", 100, "MP4 + SRT + báo cáo"
+    elif artifacts.get("voice_vi") or artifacts.get("mixed_vi") or str(steps.get("generate_tts", "")).lower() == "done":
+        status, tone, progress, resume = "Cần duyệt", "warning", max(progress, 82), "Đang ở: Duyệt lồng tiếng"
+    elif artifacts.get("translation_final") or str(steps.get("translate_raw", "")).lower() == "done":
+        status, tone, progress, resume = "Cần duyệt", "warning", max(progress, 64), "Đang ở: Duyệt bản dịch"
+    elif artifacts.get("transcript_segments") or str(steps.get("transcribe", "")).lower() == "done":
+        status, tone, progress, resume = "Đã chép lời", "info", max(progress, 42), "Đang ở: Chép lời"
+
+    language = str(state.get("input_language") or "").strip().lower()
+    source_label = {"zh": "Tiếng Trung", "en": "Tiếng Anh"}.get(language, "Chưa chọn ngôn ngữ")
+    duration = max(
+        (float(item.get("end", item.get("end_time", 0.0)) or 0.0) for item in segments if isinstance(item, dict)),
+        default=0.0,
+    )
+    facts = [f"{source_label} → Tiếng Việt"]
+    if duration > 0:
+        facts.append(_format_duration(duration))
+    if segments:
+        facts.append(f"{len(segments)} cues")
+    return {
+        "name": os.path.basename(video_path),
+        "status": status,
+        "tone": tone,
+        "progress": max(0, min(100, progress)),
+        "resume": resume,
+        "facts": " · ".join(facts),
+    }
+
+
+def is_supported_video_path(path: str) -> bool:
+    return bool(path and os.path.isfile(path) and Path(path).suffix.lower() in SUPPORTED_VIDEO_EXTENSIONS)
 
 
 
@@ -52,26 +129,9 @@ def _save_recent_projects(settings, projects):
 
 def _project_pipeline_status(video_path: str) -> tuple[str, str]:
     """Read the persisted project stage without creating or modifying it."""
-    name = os.path.splitext(os.path.basename(video_path))[0] or "project"
-    slug = re.sub(r"[^a-zA-Z0-9]+", "_", name).strip("_").lower() or "project"
-    digest = hashlib.sha1(os.path.abspath(video_path).encode("utf-8")).hexdigest()[:8]
-    state_path = os.path.join(workspace_root(), "projects", f"{slug}_{digest}", "project.json")
-    try:
-        with open(os.path.normpath(state_path), "r", encoding="utf-8") as handle:
-            state = json.load(handle)
-    except (OSError, ValueError, TypeError):
-        return "Ready", "#8394aa"
-    artifacts = dict(state.get("artifacts") or {})
-    steps = dict(state.get("steps") or {})
-    if artifacts.get("final_video"):
-        return "Export complete", "#6ee7d6"
-    if artifacts.get("voice_vi") or artifacts.get("mixed_vi"):
-        return "TTS complete", "#6ee7d6"
-    if str(steps.get("translate_raw", "")).lower() == "done" or artifacts.get("translation_final"):
-        return "Translate complete", "#78b8ff"
-    if artifacts.get("transcript_segments"):
-        return "Transcript complete", "#f6c453"
-    return "Ready", "#8394aa"
+    summary = project_card_summary(video_path)
+    colors = {"done": "#54d18b", "warning": "#ffd400", "info": "#8ad7ff", "neutral": "#8394aa"}
+    return summary["status"], colors[summary["tone"]]
 
 
 def _extract_thumbnail(video_path: str, output_path: str) -> str:
@@ -128,50 +188,80 @@ class ProjectCard(QFrame):
         super().__init__(parent)
         self.video_path = video_path
         self._orig_pixmap = None
-        self.setObjectName("statusCard")
-        self.setMinimumSize(180, 184)
+        summary = project_card_summary(video_path)
+        self.setObjectName("projectCard")
+        self.setMinimumSize(260, 245)
+        self.setMaximumWidth(460)
         self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
         self.setCursor(Qt.PointingHandCursor)
-        self.setStyleSheet("ProjectCard:hover { border: 2px solid #4ecdc4; }")
+        self.setAccessibleName(f"Mở lại dự án {summary['name']}, {summary['status']}")
+        self.setStyleSheet(
+            "#projectCard { background:#121b2b; border:1px solid #263850; border-radius:10px; }"
+            "#projectCard:hover, #projectCard:focus { border:2px solid #4ed0b3; }"
+        )
 
         layout = QVBoxLayout(self)
-        layout.setContentsMargins(8, 8, 8, 8)
-        layout.setSpacing(6)
+        layout.setContentsMargins(12, 12, 12, 12)
+        layout.setSpacing(8)
 
         self.thumb_label = QLabel()
-        self.thumb_label.setMinimumSize(160, 120)
+        self.thumb_label.setMinimumSize(220, 120)
         self.thumb_label.setAlignment(Qt.AlignCenter)
-        self.thumb_label.setStyleSheet("background-color: #0d1220; border-radius: 6px;")
+        self.thumb_label.setStyleSheet(
+            "background-color:#0b1320; color:#8196ad; border:1px solid #30445d; border-radius:6px;"
+        )
         self.thumb_label.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
-
         layout.addWidget(self.thumb_label)
 
-        self.name_label = QLabel(os.path.basename(video_path))
+        name_row = QHBoxLayout()
+        self.name_label = QLabel(summary["name"])
         self.name_label.setWordWrap(True)
         self.name_label.setMaximumHeight(36)
-        self.name_label.setStyleSheet("color: #e0e0e0; font-size: 11px; font-weight: 600;")
-        layout.addWidget(self.name_label)
+        self.name_label.setStyleSheet("color:#f8fbff; font-size:12px; font-weight:700;")
+        name_row.addWidget(self.name_label, 1)
 
-        stage_text, stage_color = _project_pipeline_status(video_path)
-        self.stage_badge = QLabel(stage_text)
+        _stage_text, stage_color = _project_pipeline_status(video_path)
+        self.stage_badge = QLabel(f"● {summary['status']}")
         self.stage_badge.setAlignment(Qt.AlignCenter)
         self.stage_badge.setStyleSheet(
-            f"background-color: #142437; color: {stage_color}; border: 1px solid #2e4b68; "
-            "border-radius: 7px; padding: 3px 7px; font-size: 10px; font-weight: 700;"
+            f"background-color:#142437; color:{stage_color}; border:1px solid #2e4b68; "
+            "border-radius:9px; padding:3px 8px; font-size:10px; font-weight:700;"
         )
-        layout.addWidget(self.stage_badge)
+        name_row.addWidget(self.stage_badge)
+        layout.addLayout(name_row)
+
+        self.facts_label = QLabel(summary["facts"])
+        self.facts_label.setStyleSheet("color:#9bb2ca; font-size:10px;")
+        layout.addWidget(self.facts_label)
+
+        self.progress_bar = QProgressBar()
+        self.progress_bar.setRange(0, 100)
+        self.progress_bar.setValue(summary["progress"])
+        self.progress_bar.setTextVisible(False)
+        self.progress_bar.setFixedHeight(6)
+        self.progress_bar.setStyleSheet(
+            "QProgressBar{background:#09111e;border:0;border-radius:3px;}"
+            "QProgressBar::chunk{background:#4ed0b3;border-radius:3px;}"
+        )
+        layout.addWidget(self.progress_bar)
+        progress_row = QHBoxLayout()
+        resume_label = QLabel(summary["resume"])
+        resume_label.setStyleSheet("color:#8ad7ff; font-size:10px;")
+        progress_label = QLabel(f"{summary['progress']}%")
+        progress_label.setStyleSheet("color:#9bb2ca; font-size:10px;")
+        progress_row.addWidget(resume_label, 1)
+        progress_row.addWidget(progress_label)
+        layout.addLayout(progress_row)
 
         self._load_thumb(thumbnail_cache_dir)
 
     def _load_thumb(self, cache_dir):
         thumb_path = os.path.join(cache_dir, _thumbnail_name(self.video_path))
-        if not os.path.exists(thumb_path):
-            thumb_path = _extract_thumbnail(self.video_path, thumb_path)
         if os.path.exists(thumb_path):
             self._orig_pixmap = QPixmap(thumb_path)
             self._update_thumb()
         else:
-            self.thumb_label.setText("No Preview")
+            self.thumb_label.setText("Xem trước sẽ được tạo khi mở dự án")
 
     def _update_thumb(self):
         if self._orig_pixmap is None or self._orig_pixmap.isNull():
@@ -190,6 +280,45 @@ class ProjectCard(QFrame):
             return
         self.window().selected_video = self.video_path
         self.window().accept()
+
+
+class DropProjectCard(QFrame):
+    def __init__(self, launcher, parent=None):
+        super().__init__(parent)
+        self.launcher = launcher
+        self.setObjectName("dropProjectCard")
+        self.setMinimumSize(260, 245)
+        self.setMaximumWidth(460)
+        self.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
+        self.setCursor(Qt.PointingHandCursor)
+        self.setAccessibleName("Kéo video vào đây hoặc nhấn để chọn video")
+        self.setStyleSheet(
+            "#dropProjectCard{background:#121b2b;border:1px dashed #36516e;border-radius:10px;}"
+            "#dropProjectCard:hover,#dropProjectCard:focus{border:2px solid #4ed0b3;}"
+        )
+        layout = QVBoxLayout(self)
+        layout.setAlignment(Qt.AlignCenter)
+        mark = QLabel("＋")
+        mark.setAlignment(Qt.AlignCenter)
+        mark.setFixedSize(44, 44)
+        mark.setStyleSheet("background:#72d7ea;color:#08111f;border-radius:10px;font-size:22px;font-weight:800;")
+        title = QLabel("Kéo video vào đây")
+        title.setAlignment(Qt.AlignCenter)
+        title.setStyleSheet("color:#ffffff;font-size:15px;font-weight:800;")
+        hint = QLabel("MP4, MKV, AVI, MOV, WEBM · dữ liệu giữ trên máy")
+        hint.setAlignment(Qt.AlignCenter)
+        hint.setWordWrap(True)
+        hint.setStyleSheet("color:#8ad7ff;font-size:10px;")
+        layout.addWidget(mark, 0, Qt.AlignCenter)
+        layout.addWidget(title)
+        layout.addWidget(hint)
+
+    def mousePressEvent(self, event):
+        if event.button() == Qt.LeftButton:
+            self.launcher._on_new_project()
+            event.accept()
+            return
+        super().mousePressEvent(event)
 
 
 def _extract_waveform_audio(video_path: str, temp_root: str) -> str:
@@ -330,10 +459,15 @@ def _prepare_timeline_visual_cache(video_path: str, temp_root: str) -> None:
 
 
 class LauncherWindow(QDialog):
+    hardwareProbed = Signal(bool, str, bool)
+
     def __init__(self):
         super().__init__()
         self.selected_video = ""
-        self.selected_device = "cuda"
+        preferred = str(os.getenv("CAPCAP_DEVICE", "") or "").strip().lower()
+        self.selected_device = preferred if preferred in {"cpu", "cuda"} else "cpu"
+        self._device_preference_explicit = preferred in {"cpu", "cuda"}
+        self._hardware_state = (False, "", False)
         self._thumbnail_dir = os.path.join(workspace_root(), "temp", "launcher_thumbs")
 
         from runtime_paths import asset_path
@@ -342,25 +476,44 @@ class LauncherWindow(QDialog):
         if os.path.exists(logo):
             self.setWindowIcon(QIcon(logo))
 
-        self.setWindowTitle("CapCap - Video Translator")
-        self.setMinimumSize(840, 540)
+        self.setWindowTitle("CapCap — Dịch video & lồng tiếng")
+        self.setMinimumSize(1040, 680)
+        self.resize(1360, 820)
+        self.setAcceptDrops(True)
         self.setStyleSheet("""
             QDialog {
-                background-color: #0a101e;
-                color: #cfe6ff;
+                background-color: #08111f;
+                color: #d7e7f7;
+                font-family: "Segoe UI";
+                font-size: 12px;
             }
-            #statusCard {
-                background-color: #0f1928;
-                border: 1px solid #1e3045;
-                border-radius: 8px;
+            QLabel#eyebrow { color:#4ed0b3; font-size:10px; font-weight:800; }
+            QLabel#pageTitle { color:#ffffff; font-size:24px; font-weight:800; }
+            QLabel#sectionTitle { color:#ffffff; font-size:18px; font-weight:800; }
+            QLabel#muted { color:#9bb2ca; }
+            QLabel#cardLabel { color:#8ad7ff; font-size:10px; font-weight:700; }
+            QLabel#cardValue { color:#ffffff; font-size:14px; font-weight:800; }
+            #readinessCard {
+                background-color:#121b2b; border:1px solid #263850; border-radius:10px;
             }
+            QPushButton {
+                background:#1b2b42; color:#dcebfa; border:1px solid #36516e;
+                border-radius:8px; padding:8px 13px; font-weight:700;
+            }
+            QPushButton:hover, QPushButton:focus { border:2px solid #4ed0b3; }
+            QPushButton#primaryButton { background:#4ed0b3; color:#06141b; border:0; }
+            QPushButton#primaryButton:hover { background:#72e0c8; }
+            QPushButton#dangerButton { background:#3a2630; color:#ffb7c0; border-color:#70404e; }
+            QScrollArea { background:transparent; border:0; }
         """)
 
+        self.hardwareProbed.connect(self._apply_hardware_probe)
         self._build_ui()
         QTimer.singleShot(0, self._load_recent)
         QTimer.singleShot(0, self._validate_resources_for_device)
+        QTimer.singleShot(0, self._start_hardware_probe)
 
-    def _build_ui(self):
+    def _build_legacy_ui(self):
         root = QVBoxLayout(self)
         root.setContentsMargins(24, 24, 24, 24)
         root.setSpacing(16)
@@ -599,6 +752,231 @@ class LauncherWindow(QDialog):
         self.loading_label.hide()
         root.addWidget(self.loading_label)
 
+    def _make_readiness_card(self, label: str, value: str) -> tuple[QFrame, QVBoxLayout, QLabel]:
+        card = QFrame(self)
+        card.setObjectName("readinessCard")
+        card.setMinimumHeight(145)
+        layout = QVBoxLayout(card)
+        layout.setContentsMargins(14, 14, 14, 14)
+        layout.setSpacing(8)
+        label_widget = QLabel(label.upper())
+        label_widget.setObjectName("cardLabel")
+        value_widget = QLabel(value)
+        value_widget.setObjectName("cardValue")
+        layout.addWidget(label_widget)
+        layout.addWidget(value_widget)
+        return card, layout, value_widget
+
+    @staticmethod
+    def _pill(text: str, color: str) -> QLabel:
+        label = QLabel(text)
+        label.setAlignment(Qt.AlignCenter)
+        label.setStyleSheet(
+            f"color:{color}; background:#142437; border:1px solid {color}; "
+            "border-radius:9px; padding:3px 8px; font-size:10px; font-weight:700;"
+        )
+        return label
+
+    def _build_ui(self):
+        root = QVBoxLayout(self)
+        root.setContentsMargins(18, 16, 18, 18)
+        root.setSpacing(16)
+
+        topbar = QHBoxLayout()
+        mark = QLabel("C")
+        mark.setAlignment(Qt.AlignCenter)
+        mark.setFixedSize(28, 28)
+        mark.setStyleSheet("background:#72d7ea;color:#07131d;border-radius:8px;font-size:14px;font-weight:900;")
+        brand = QLabel("CapCap V7")
+        brand.setStyleSheet("color:#ffffff;font-size:15px;font-weight:900;")
+        product = QLabel("│  Video Translation & Voiceover Studio")
+        product.setStyleSheet("color:#b9cee4;font-size:11px;font-weight:600;")
+        topbar.addWidget(mark)
+        topbar.addWidget(brand)
+        topbar.addWidget(product)
+        topbar.addStretch()
+        self.resource_btn = QPushButton("Tài nguyên & cài đặt")
+        self.resource_btn.setAccessibleName("Mở tài nguyên và cài đặt")
+        self.resource_btn.clicked.connect(self._on_manage_resources)
+        topbar.addWidget(self.resource_btn)
+        root.addLayout(topbar)
+
+        heading = QHBoxLayout()
+        heading_text = QVBoxLayout()
+        eyebrow = QLabel("BẮT ĐẦU")
+        eyebrow.setObjectName("eyebrow")
+        title = QLabel("Sẵn sàng trước khi chạy")
+        title.setObjectName("pageTitle")
+        description = QLabel("Chọn thiết bị, xác minh model bắt buộc rồi mở hoặc tạo dự án.")
+        description.setObjectName("muted")
+        heading_text.addWidget(eyebrow)
+        heading_text.addWidget(title)
+        heading_text.addWidget(description)
+        heading.addLayout(heading_text, 1)
+        self.open_project_btn = QPushButton("Mở thư mục dự án")
+        self.open_project_btn.setAccessibleName("Mở thư mục dự án CapCap")
+        self.open_project_btn.clicked.connect(self._on_open_project_folder)
+        heading.addWidget(self.open_project_btn, 0, Qt.AlignBottom)
+        self.new_btn = QPushButton("＋ Dự án mới")
+        self.new_btn.setObjectName("primaryButton")
+        self.new_btn.setMinimumHeight(42)
+        self.new_btn.setAccessibleName("Tạo dự án mới từ video")
+        self.new_btn.clicked.connect(self._on_new_project)
+        heading.addWidget(self.new_btn, 0, Qt.AlignBottom)
+        root.addLayout(heading)
+
+        readiness = QHBoxLayout()
+        readiness.setSpacing(12)
+
+        device_card, device_layout, self._device_value = self._make_readiness_card(
+            "Thiết bị xử lý", "Đang kiểm tra phần cứng…"
+        )
+        self._gpu_label = QLabel("Đang xác minh CUDA và VRAM")
+        self._gpu_label.setObjectName("muted")
+        self._gpu_label.setWordWrap(True)
+        device_layout.addWidget(self._gpu_label)
+        device_row = QHBoxLayout()
+        device_row.setSpacing(0)
+        self.cpu_btn = QPushButton("CPU")
+        self.cpu_btn.setCheckable(True)
+        self.gpu_btn = QPushButton("GPU · Khuyến nghị")
+        self.gpu_btn.setCheckable(True)
+        self.cpu_btn.setChecked(self.selected_device == "cpu")
+        self.gpu_btn.setChecked(self.selected_device == "cuda")
+        device_style = (
+            "QPushButton{border-radius:0;background:#101b2b;color:#9bb2ca;}"
+            "QPushButton:checked{background:#1b4361;color:#8ad7ff;border-color:#4ed0b3;}"
+            "QPushButton:disabled{color:#56677a;border-color:#25364a;}"
+        )
+        self.cpu_btn.setStyleSheet(device_style)
+        self.gpu_btn.setStyleSheet(device_style)
+        self.cpu_btn.clicked.connect(lambda checked: self._choose_device("cpu", checked))
+        self.gpu_btn.clicked.connect(lambda checked: self._choose_device("cuda", checked))
+        device_row.addWidget(self.cpu_btn, 1)
+        device_row.addWidget(self.gpu_btn, 1)
+        device_layout.addLayout(device_row)
+        readiness.addWidget(device_card, 1)
+
+        profile_card, profile_layout, _profile_value = self._make_readiness_card(
+            "Hồ sơ thực thi", "Hybrid · mặc định"
+        )
+        profile_header = QHBoxLayout()
+        profile_header.addStretch()
+        profile_header.addWidget(self._pill("● Chỉ gửi văn bản", "#8ad7ff"))
+        profile_layout.insertLayout(1, profile_header)
+        profile_description = QLabel(
+            "Media, ASR, TTS và xuất chạy local; dịch văn bản dùng provider đã chọn."
+        )
+        profile_description.setObjectName("muted")
+        profile_description.setWordWrap(True)
+        profile_layout.addWidget(profile_description)
+        profile_button = QPushButton("Xem cấu hình")
+        profile_button.clicked.connect(self._on_manage_resources)
+        profile_layout.addWidget(profile_button, 0, Qt.AlignLeft)
+        readiness.addWidget(profile_card, 1)
+
+        resource_card, resource_layout, self._resource_value = self._make_readiness_card(
+            "Kiểm tra bắt buộc", "Đang kiểm tra…"
+        )
+        resource_header = QHBoxLayout()
+        resource_header.addStretch()
+        self._resource_badge = self._pill("● Đang kiểm tra", "#8ad7ff")
+        resource_header.addWidget(self._resource_badge)
+        resource_layout.insertLayout(1, resource_header)
+        self._missing_label = QLabel("Đang xác minh model và runtime cho thiết bị đã chọn.")
+        self._missing_label.setObjectName("muted")
+        self._missing_label.setWordWrap(True)
+        resource_layout.addWidget(self._missing_label)
+        resource_manage = QPushButton("Quản lý tài nguyên")
+        resource_manage.clicked.connect(self._on_manage_resources)
+        resource_layout.addWidget(resource_manage, 0, Qt.AlignLeft)
+        readiness.addWidget(resource_card, 1)
+        root.addLayout(readiness)
+
+        recent_heading = QHBoxLayout()
+        recent_text = QVBoxLayout()
+        self.section_label = QLabel("Dự án gần đây")
+        self.section_label.setObjectName("sectionTitle")
+        recent_hint = QLabel("Tiếp tục đúng bước đã dừng; không chạy lại toàn bộ pipeline.")
+        recent_hint.setObjectName("muted")
+        recent_text.addWidget(self.section_label)
+        recent_text.addWidget(recent_hint)
+        recent_heading.addLayout(recent_text, 1)
+        self.clean_video_btn = QPushButton("Dọn dữ liệu video…")
+        self.clean_video_btn.setObjectName("dangerButton")
+        self.clean_video_btn.setToolTip("Xóa project sinh ra và cache xem trước; không xóa video nguồn/model")
+        self.clean_video_btn.clicked.connect(self._on_clean_video_data)
+        recent_heading.addWidget(self.clean_video_btn, 0, Qt.AlignBottom)
+        root.addLayout(recent_heading)
+
+        scroll = QScrollArea()
+        scroll.setWidgetResizable(True)
+        scroll.setFrameShape(QFrame.NoFrame)
+        scroll.setStyleSheet(
+            "QScrollArea{background:#08111f;border:0;}"
+            "QScrollArea > QWidget > QWidget{background:#08111f;}"
+        )
+        self.grid_widget = QWidget()
+        self.grid_widget.setStyleSheet("background:#08111f;")
+        self.grid = QGridLayout(self.grid_widget)
+        self.grid.setContentsMargins(0, 0, 0, 0)
+        self.grid.setSpacing(12)
+        self.grid.setAlignment(Qt.AlignTop | Qt.AlignLeft)
+        scroll.setWidget(self.grid_widget)
+        root.addWidget(scroll, 1)
+
+        self.empty_label = QLabel("")
+        self.empty_label.hide()
+        self.loading_label = QLabel("Đang chuẩn bị video…")
+        self.loading_label.setAlignment(Qt.AlignCenter)
+        self.loading_label.setStyleSheet("color:#4ed0b3;font-size:14px;font-weight:700;padding:12px;")
+        self.loading_label.hide()
+        root.addWidget(self.loading_label)
+
+        # Kept as non-primary compatibility actions; the approved Launcher
+        # reserves its visible hierarchy for create/open/readiness/resume.
+        self.split_btn = QPushButton("Chia video")
+        self.split_btn.clicked.connect(self._on_split_video)
+        self.split_btn.hide()
+        self.about_btn = QPushButton("Trợ giúp")
+        self.about_btn.clicked.connect(self._on_about)
+        self.about_btn.hide()
+
+    def _choose_device(self, device: str, checked: bool) -> None:
+        if not checked:
+            active = self.gpu_btn if device == "cpu" else self.cpu_btn
+            if not active.isChecked():
+                (self.cpu_btn if device == "cpu" else self.gpu_btn).setChecked(True)
+            return
+        self._device_preference_explicit = True
+        self.cpu_btn.setChecked(device == "cpu")
+        self.gpu_btn.setChecked(device == "cuda")
+        self._set_selected_device(device)
+        self._validate_resources_for_device()
+
+    def _start_hardware_probe(self) -> None:
+        def probe() -> None:
+            has_gpu, gpu_name, cuda_ready = self._detect_gpu_with_cuda()
+            self.hardwareProbed.emit(has_gpu, gpu_name, cuda_ready)
+
+        threading.Thread(target=probe, name="capcap-launcher-probe", daemon=True).start()
+
+    def _apply_hardware_probe(self, has_gpu: bool, gpu_name: str, cuda_ready: bool) -> None:
+        self._hardware_state = (has_gpu, gpu_name, cuda_ready)
+        LauncherWindow._gpu_name = gpu_name if has_gpu else ""
+        if has_gpu and cuda_ready and not self._device_preference_explicit:
+            self.selected_device = "cuda"
+            self.cpu_btn.setChecked(False)
+            self.gpu_btn.setChecked(True)
+        elif self.selected_device == "cuda" and not (has_gpu and cuda_ready):
+            self.selected_device = "cpu"
+            self.cpu_btn.setChecked(True)
+            self.gpu_btn.setChecked(False)
+        self.gpu_btn.setEnabled(has_gpu and cuda_ready)
+        self.gpu_btn.setText("GPU · Khuyến nghị" if has_gpu and cuda_ready else "GPU · Chưa sẵn sàng")
+        self._update_gpu_label(has_gpu, gpu_name, cuda_ready)
+        self._validate_resources_for_device()
+
     def accept(self):
         if not self.selected_video or not os.path.exists(self.selected_video):
             super().accept()
@@ -755,57 +1133,44 @@ class LauncherWindow(QDialog):
         device = self.selected_device
         is_ok, missing, advisory = self._launch_resource_state(service)
         self.new_btn.setEnabled(is_ok)
-        if device == "cuda":
-            has_gpu = True
-            gpu_name = ""
-            try:
-                import subprocess
-                result = subprocess.run(
-                    ["nvidia-smi", "--query-gpu=name", "--format=csv,noheader"],
-                    capture_output=True, text=True, timeout=10,
-                    **subprocess_hidden_kwargs(),
-                )
-                if result.returncode == 0 and result.stdout.strip():
-                    gpu_name = result.stdout.strip().split("\n")[0].strip()
-            except Exception:
-                pass
-            cuda_ready = is_ok
-            self._update_gpu_label(has_gpu, gpu_name, cuda_ready)
-            if not cuda_ready:
-                self.gpu_btn.setEnabled(False)
-                self.gpu_btn.setText("GPU (N/A)")
-        elif device == "cpu":
-            has_gpu, _gpu_name, cuda_ready = self._detect_gpu_with_cuda()
-            gpu_usable = has_gpu and cuda_ready
-            if gpu_usable:
-                self.gpu_btn.setEnabled(True)
-                self.gpu_btn.setText("GPU (Recommended)")
-                self._update_gpu_label(has_gpu, _gpu_name, cuda_ready)
+        requirements = list(service.get_device_requirements(device))
+        missing_ids = {resource_id for resource_id, _label in [*missing, *advisory]}
+        ready_count = sum(1 for resource_id, _label in requirements if resource_id not in missing_ids)
+        self._resource_value.setText(f"{ready_count}/{len(requirements)} tài nguyên")
         if is_ok and not advisory:
-            self._missing_label.hide()
-            self._missing_label.setText("")
+            self._resource_badge.setText("● Sẵn sàng")
+            self._resource_badge.setStyleSheet(
+                "color:#54d18b;background:#142437;border:1px solid #54d18b;"
+                "border-radius:9px;padding:3px 8px;font-size:10px;font-weight:700;"
+            )
+            self._missing_label.setText("Các tài nguyên bắt buộc cho thiết bị đã chọn đã sẵn sàng.")
             if hasattr(self, "new_btn") and self.new_btn.toolTip():
                 self.new_btn.setToolTip("")
         elif is_ok:
             labels = [label for _rid, label in advisory]
             text = (
-                "SenseVoice is not detected yet. You can continue to the Main UI; "
-                "download SenseVoice from Manage Resources before using it for transcription."
+                f"Có thể mở dự án. Tùy chọn cần bổ sung: {', '.join(labels)}; "
+                "cài trong Quản lý tài nguyên trước khi dùng tính năng tương ứng."
+            )
+            self._resource_badge.setText(f"● {len(advisory)} cần xử lý")
+            self._resource_badge.setStyleSheet(
+                "color:#ffd400;background:#2c260e;border:1px solid #8b6d00;"
+                "border-radius:9px;padding:3px 8px;font-size:10px;font-weight:700;"
             )
             self._missing_label.setText(text)
-            self._missing_label.show()
             self.new_btn.setToolTip(text)
         else:
             labels = [label for _rid, label in missing]
             if advisory:
                 labels.extend(label for _rid, label in advisory)
-            if device == "cpu":
-                prefix = "CPU mode needs:"
-            else:
-                prefix = "GPU mode needs:"
-            text = f"{prefix} {', '.join(labels)}. Open Manage Resources to set them up."
+            mode = "CPU" if device == "cpu" else "GPU"
+            text = f"{mode} chưa thể chạy: thiếu {', '.join(labels)}. Mở Quản lý tài nguyên để cài."
+            self._resource_badge.setText(f"● {len(missing)} chặn chạy")
+            self._resource_badge.setStyleSheet(
+                "color:#ff6b6b;background:#321b24;border:1px solid #8f3d50;"
+                "border-radius:9px;padding:3px 8px;font-size:10px;font-weight:700;"
+            )
             self._missing_label.setText(text)
-            self._missing_label.show()
             self.new_btn.setToolTip(text)
         try:
             for i in range(self.grid.count()):
@@ -831,29 +1196,47 @@ class LauncherWindow(QDialog):
         if existing != projects:
             _save_recent_projects(None, existing)
 
-        if not existing:
-            self.empty_label.show()
-            return
         self.empty_label.hide()
 
-        columns = min(3, max(1, (self.grid_widget.width() - 24) // 242))
+        columns = min(3, max(1, (self.grid_widget.width() - 24) // 300))
         for i, proj in enumerate(existing):
             card = ProjectCard(proj["video_path"], self._thumbnail_dir, self)
             row, col = divmod(i, max(1, columns))
             self.grid.addWidget(card, row, col)
             self.grid.setColumnStretch(col, 1)
+        drop_index = len(existing)
+        row, col = divmod(drop_index, max(1, columns))
+        self.grid.addWidget(DropProjectCard(self, self), row, col)
+        self.grid.setColumnStretch(col, 1)
 
     def resizeEvent(self, event):
         super().resizeEvent(event)
         QTimer.singleShot(0, self._load_recent)
 
+    def dragEnterEvent(self, event):
+        paths = [url.toLocalFile() for url in event.mimeData().urls()] if event.mimeData().hasUrls() else []
+        if any(is_supported_video_path(path) for path in paths):
+            event.acceptProposedAction()
+        else:
+            event.ignore()
+
+    def dropEvent(self, event):
+        paths = [url.toLocalFile() for url in event.mimeData().urls()] if event.mimeData().hasUrls() else []
+        selected = next((path for path in paths if is_supported_video_path(path)), "")
+        if not selected:
+            event.ignore()
+            return
+        self.selected_video = os.path.normpath(selected)
+        event.acceptProposedAction()
+        self.accept()
+
     def _on_new_project(self):
         path, _ = QFileDialog.getOpenFileName(
-            self, "Select Video", "",
-            "Video Files (*.mp4 *.mkv *.avi *.mov *.webm);;All Files (*)"
+            self, "Chọn video nguồn", "",
+            "Video (*.mp4 *.mkv *.avi *.mov *.webm);;Tất cả tệp (*)"
         )
-        if path:
-            self.selected_video = path
+        if is_supported_video_path(path):
+            self.selected_video = os.path.normpath(path)
             self.accept()
 
     def _on_manage_resources(self):
@@ -1177,14 +1560,17 @@ class LauncherWindow(QDialog):
     def _update_gpu_label(self, has_gpu: bool, gpu_name: str, cuda_ready: bool):
         if has_gpu:
             if cuda_ready:
-                self._gpu_label.setText(f"GPU: {gpu_name}  \u2713 CUDA ready")
-                self._gpu_label.setStyleSheet("font-size: 11px; color: #4ecdc4;")
+                self._device_value.setText(gpu_name or "NVIDIA GPU")
+                self._gpu_label.setText("● CUDA sẵn sàng · phù hợp Faster-Whisper và VieNeu tuần tự")
+                self._gpu_label.setStyleSheet("font-size:11px;color:#54d18b;")
             else:
-                self._gpu_label.setText(f"GPU: {gpu_name}  \u2717 Need GPU Acceleration Pack")
-                self._gpu_label.setStyleSheet("font-size: 11px; color: #ffa500;")
+                self._device_value.setText(gpu_name or "NVIDIA GPU")
+                self._gpu_label.setText("● Đã thấy GPU · cần gói tăng tốc CUDA")
+                self._gpu_label.setStyleSheet("font-size:11px;color:#ffd400;")
         else:
-            self._gpu_label.setText("CPU only")
-            self._gpu_label.setStyleSheet("font-size: 11px; color: #5a7a9a;")
+            self._device_value.setText("CPU cục bộ")
+            self._gpu_label.setText("● Không phát hiện GPU NVIDIA khả dụng")
+            self._gpu_label.setStyleSheet("font-size:11px;color:#9bb2ca;")
 
     @staticmethod
     def add_recent(settings_or_none, video_path: str):
