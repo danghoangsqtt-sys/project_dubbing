@@ -103,6 +103,16 @@ def windows_cpu_name() -> str:
     if os.name != "nt":
         return platform.processor() or "unknown"
 
+    try:
+        import winreg
+
+        key_path = r"HARDWARE\DESCRIPTION\System\CentralProcessor\0"
+        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
+            value, _ = winreg.QueryValueEx(key, "ProcessorNameString")
+        return str(value).strip()
+    except OSError:
+        return platform.processor() or "unknown"
+
 
 def windows_release_name(build: str) -> str:
     """Windows 11 still reports kernel major 10; build 22000 is the boundary."""
@@ -141,15 +151,6 @@ def windows_os_details() -> dict[str, str]:
     except OSError:
         pass
     return details
-    try:
-        import winreg
-
-        key_path = r"HARDWARE\DESCRIPTION\System\CentralProcessor\0"
-        with winreg.OpenKey(winreg.HKEY_LOCAL_MACHINE, key_path) as key:
-            value, _ = winreg.QueryValueEx(key, "ProcessorNameString")
-        return str(value).strip()
-    except OSError:
-        return platform.processor() or "unknown"
 
 
 def total_memory_bytes() -> int:

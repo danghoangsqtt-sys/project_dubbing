@@ -8,6 +8,7 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 
 - Bộ project context ViePilot: kiến trúc, requirements, schemas, phase specs và roadmap giao hàng 21 ngày.
 - UI Direction sáu màn hình và design contract `design.md` cho ứng dụng PySide6.
+- Quy trình dựng `.venv` Python 3.11 tái lập được, bộ kiểm tra preflight phần cứng/runtime và báo cáo bằng chứng Day 1.
 
 ### Changed
 

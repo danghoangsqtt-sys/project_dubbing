@@ -13,6 +13,8 @@
 
 **Goal:** Both Chinese→Vietnamese and English→Vietnamese produce editable SRT and a playable dubbed MP4, with save/reopen and visible failure recovery.
 
+**Status:** In progress — 1/13 tasks complete; Day 1 preflight passed on 2026-09-10.
+
 | Task | Day | Description | Acceptance criteria | Size |
 |---|---:|---|---|---|
 | 1.1 | 1 | Reproducible baseline and preflight | Clean Python 3.11 environment launches GUI; CPU/GPU/RAM, CUDA, FFmpeg/NVENC and required resources are recorded; one local video opens | M |
@@ -100,7 +102,7 @@ Get-FileHash -Algorithm SHA256 dist/CapCap-0.1.0.zip
 
 | Phase | Status | Tasks | Completed | Progress |
 |---|---|---:|---:|---:|
-| 1. Core Feature Complete | In progress | 13 | 0 | 0% |
+| 1. Core Feature Complete | In progress | 13 | 1 | 8% |
 | 2. RC1 Stability & Performance | Not started | 7 | 0 | 0% |
 | 3. Validation, Package & Report | Not started | 7 | 0 | 0% |
 

@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-10T07:02:01+07:00",
+  "generated_at": "2026-09-10T07:06:51+07:00",
   "project": "CapCap",
   "task": "1.1",
   "privacy": "No .env values, API credentials, media contents or user-home paths are recorded.",
@@ -24,7 +24,7 @@
           "edition": "Professional"
         },
         "architecture": "AMD64",
-        "cpu": null,
+        "cpu": "12th Gen Intel(R) Core(TM) i7-12700",
         "logical_cpu_count": 20,
         "ram_bytes": 34088599552,
         "ram_gib": 31.75
@@ -150,10 +150,10 @@
         "name": "NVIDIA GeForce RTX 3060",
         "driver_version": "616.56",
         "memory_total_mib": 12288,
-        "memory_free_mib": 10998,
+        "memory_free_mib": 10784,
         "compute_capability": "8.6",
         "cuda_driver_api_version": "13.4",
-        "temperature_c": 51
+        "temperature_c": 50
       }
     },
     {

@@ -5,17 +5,17 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.1 — Reproducible baseline and preflight (`in_progress`)
-- **Last activity:** 2026-09-10 — Task 1.1 contract refined; environment discovery completed
+- **Current task:** 1.2 — Canonical segment/state/provenance migration (`ready`)
+- **Last activity:** 2026-09-10 — Task 1.1 completed; Python 3.11 baseline and Day 1 preflight passed
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
 
 ```text
-Phase 1 — Core Feature Complete         [----------] 0/13
+Phase 1 — Core Feature Complete         [#---------] 1/13
 Phase 2 — RC1 Stability & Performance   [----------] 0/7
 Phase 3 — Validation, Package & Report  [----------] 0/7
-Overall                                 [----------] 0/27
+Overall                                 [#---------] 1/27
 ```
 
 Existing upstream capabilities are the brownfield baseline; percentages track this 21-day stabilization milestone only.
@@ -24,7 +24,7 @@ Existing upstream capabilities are the brownfield baseline; percentages track th
 
 | Gate | Target | Status | Evidence |
 |---|---|---|---|
-| Day 1 | Clean Python 3.11 GUI + open video | Pending | `artifacts/evidence/day-1-preflight.json` |
+| Day 1 | Clean Python 3.11 GUI + open video | Passed | `artifacts/evidence/day-1-preflight.json` |
 | Day 3 | Correct Vietnamese SRT from zh and en | Pending | Day 3 translation/SRT report |
 | Day 5 | Dubbed MP4 + lossless reopen | Pending | Day 5 E2E report |
 | Day 7 | Core Feature Complete | Pending | `artifacts/evidence/day-7.json` |
@@ -54,8 +54,8 @@ These are assigned to Tasks 1.2 and 1.4; they are not implementation changes in 
 
 ## Blockers
 
-None. CPU model, provider preference and dominant video type are unknown but converted into preflight/benchmark inputs. Missing golden clips are a Task 1.1 requirement.
+None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native packs and the unavailable ONNX CUDA provider remain explicit readiness warnings for later resource and pipeline tasks.
 
 ## Next action
 
-Execute and verify Task 1.1 from `.viepilot/phases/01-core-feature-complete/tasks/1.1.md`.
+Start Task 1.2 from `.viepilot/phases/01-core-feature-complete/tasks/1.2.md`: migrate canonical segment/state/provenance safely before changing pipeline behavior.

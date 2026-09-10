@@ -1,23 +1,23 @@
 # Phase 1 State
 
 - **Status:** In progress
-- **Progress:** 0/13 tasks
+- **Progress:** 1/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.1 — Reproducible baseline and preflight (`in_progress`, started 2026-09-10)
+- **Current task:** 1.2 — Canonical segment/state/provenance migration (`ready`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
-- **Blockers:** None; CPU/provider/media-profile unknowns are captured by Tasks 1.1/1.4/1.13
+- **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
 
 ## Evidence index
 
-Evidence paths will be added under `artifacts/evidence/` as tasks complete.
+- `artifacts/evidence/day-1-preflight.json` — Task 1.1 machine/runtime/video/GUI preflight (`pass`, 2026-09-10)
 
 ## Task status
 
 | Task | Status | Evidence/notes |
 |---|---|---|
-| 1.1 | In progress | Contract: `tasks/1.1.md`; target report: `artifacts/evidence/day-1-preflight.json` |
-| 1.2 | Not started | — |
+| 1.1 | Done | `artifacts/evidence/day-1-preflight.json`; final state at the Task 1.1 done tag |
+| 1.2 | Ready | Canonical segment/state/provenance migration |
 | 1.3 | Not started | — |
 | 1.4 | Not started | — |
 | 1.5 | Not started | — |

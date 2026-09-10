@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import json
+import os
 import tempfile
 import unittest
 from pathlib import Path
@@ -10,6 +11,10 @@ from tools import preflight
 
 
 class PreflightTests(unittest.TestCase):
+    @unittest.skipUnless(os.name == "nt", "Windows hardware contract")
+    def test_windows_cpu_name_is_recorded(self) -> None:
+        self.assertNotIn(preflight.windows_cpu_name(), {"", "unknown", None})
+
     def test_windows_release_name_uses_build_boundary(self) -> None:
         self.assertEqual("Windows 11", preflight.windows_release_name("26100"))
         self.assertEqual("Windows 10", preflight.windows_release_name("19045"))
