@@ -5,7 +5,7 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.8 — Workspace UI direction (`ready`)
+- **Current task:** 1.8 — Workspace UI direction (`in_progress`)
 - **Last activity:** 2026-09-10 — Task 1.7 completed; approved Launcher direction rendered and 53 total tests passed
 - **Feature freeze:** Planned at end of Day 7
 
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Implement and verify Workspace UI Direction Task 1.8 against `design.md` and `workspace.html`.
+Complete and verify Workspace UI Direction Task 1.8, then continue automatically to Transcript/Translation UI Task 1.9.

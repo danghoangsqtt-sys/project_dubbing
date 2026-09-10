@@ -3,7 +3,7 @@
 - **Status:** In progress
 - **Progress:** 7/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.8 — Workspace UI direction (`ready`)
+- **Current task:** 1.8 — Workspace UI direction (`in_progress`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -33,7 +33,7 @@
 | 1.5 | Done | Atomic SRT, ffprobe validation, NVENC fallback and one final encode; `3e9a3ea` |
 | 1.6 | Done | VieNeu v3 Turbo default, serialized inference, 48 kHz, silence rejection and 0.92–1.12x timing; `c15b741` |
 | 1.7 | Done | Vietnamese readiness/resume/drop launcher aligned with approved direction; `8dbfa60` |
-| 1.8 | Not started | — |
+| 1.8 | In progress | Approved workspace navigation/stage/progress/stop-resume UI underway |
 | 1.9 | Not started | — |
 | 1.10 | Not started | — |
 | 1.11 | Not started | — |
