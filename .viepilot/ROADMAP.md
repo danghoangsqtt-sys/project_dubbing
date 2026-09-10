@@ -100,7 +100,7 @@ Get-FileHash -Algorithm SHA256 dist/CapCap-0.1.0.zip
 
 | Phase | Status | Tasks | Completed | Progress |
 |---|---|---:|---:|---:|
-| 1. Core Feature Complete | Not started | 13 | 0 | 0% |
+| 1. Core Feature Complete | In progress | 13 | 0 | 0% |
 | 2. RC1 Stability & Performance | Not started | 7 | 0 | 0% |
 | 3. Validation, Package & Report | Not started | 7 | 0 | 0% |
 

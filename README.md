@@ -62,14 +62,14 @@ CapCap vẫn đang được phát triển tích cực, với nhiều tính năng
 
 ## 🛠️ Chạy từ mã nguồn
 
-```bash
+Thiết lập tái lập được với Python 3.11 và kiểm tra GPU/FFmpeg/resource được mô tả tại [Thiết lập môi trường phát triển](docs/development-setup.md).
+
+```powershell
 git clone https://github.com/notepower2k1/CapCap.git
 cd CapCap
 
-python -m venv venv
-venv\Scripts\activate
-
-pip install -r requirements-local.txt
+.\tools\bootstrap_python311.ps1 -Requirements local
+.\.venv\Scripts\Activate.ps1
 python ui/gui.py
 ```
 

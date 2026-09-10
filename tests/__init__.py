@@ -1,0 +1,1 @@
+"""CapCap automated tests."""

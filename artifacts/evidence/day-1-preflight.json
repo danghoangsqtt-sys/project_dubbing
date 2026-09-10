@@ -1,0 +1,288 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-09-10T07:02:01+07:00",
+  "project": "CapCap",
+  "task": "1.1",
+  "privacy": "No .env values, API credentials, media contents or user-home paths are recorded.",
+  "overall_status": "pass",
+  "counts": {
+    "pass": 7,
+    "warning": 2,
+    "fail": 0
+  },
+  "checks": [
+    {
+      "id": "system",
+      "status": "pass",
+      "summary": "Windows 11 24H2 on AMD64",
+      "details": {
+        "os": {
+          "name": "Windows 11",
+          "release": "24H2",
+          "version": "10.0.26100",
+          "build": "26100",
+          "edition": "Professional"
+        },
+        "architecture": "AMD64",
+        "cpu": null,
+        "logical_cpu_count": 20,
+        "ram_bytes": 34088599552,
+        "ram_gib": 31.75
+      }
+    },
+    {
+      "id": "python",
+      "status": "pass",
+      "summary": "Python 3.11.9; virtualenv=yes",
+      "details": {
+        "version": "3.11.9",
+        "implementation": "CPython",
+        "executable": ".venv/Scripts/python.exe",
+        "virtualenv": true,
+        "required": "3.11.x in repo-local virtualenv"
+      }
+    },
+    {
+      "id": "python_packages",
+      "status": "pass",
+      "summary": "Base GUI packages ready",
+      "details": {
+        "packages": [
+          {
+            "distribution": "PySide6",
+            "module": "PySide6",
+            "scope": "base",
+            "installed": true,
+            "version": "6.11.2"
+          },
+          {
+            "distribution": "requests",
+            "module": "requests",
+            "scope": "base",
+            "installed": true,
+            "version": "2.34.2"
+          },
+          {
+            "distribution": "python-dotenv",
+            "module": "dotenv",
+            "scope": "base",
+            "installed": true,
+            "version": "1.2.3"
+          },
+          {
+            "distribution": "pydub",
+            "module": "pydub",
+            "scope": "base",
+            "installed": true,
+            "version": "0.25.1"
+          },
+          {
+            "distribution": "python-mpv",
+            "module": "mpv",
+            "scope": "base",
+            "installed": true,
+            "version": "1.0.8"
+          },
+          {
+            "distribution": "faster-whisper",
+            "module": "faster_whisper",
+            "scope": "pipeline",
+            "installed": true,
+            "version": "1.2.1"
+          },
+          {
+            "distribution": "ctranslate2",
+            "module": "ctranslate2",
+            "scope": "pipeline",
+            "installed": true,
+            "version": "4.8.2"
+          },
+          {
+            "distribution": "vieneu",
+            "module": "vieneu",
+            "scope": "pipeline",
+            "installed": true,
+            "version": "3.6.4"
+          },
+          {
+            "distribution": "numpy",
+            "module": "numpy",
+            "scope": "pipeline",
+            "installed": true,
+            "version": "2.4.6"
+          },
+          {
+            "distribution": "soundfile",
+            "module": "soundfile",
+            "scope": "pipeline",
+            "installed": true,
+            "version": "0.14.0"
+          },
+          {
+            "distribution": "onnxruntime-gpu",
+            "module": "onnxruntime",
+            "scope": "pipeline",
+            "installed": true,
+            "version": "1.29.0"
+          },
+          {
+            "distribution": "rapidocr",
+            "module": "rapidocr",
+            "scope": "pipeline",
+            "installed": true,
+            "version": "3.9.2"
+          },
+          {
+            "distribution": "sherpa-onnx",
+            "module": "sherpa_onnx",
+            "scope": "pipeline",
+            "installed": true,
+            "version": "1.13.7"
+          }
+        ]
+      }
+    },
+    {
+      "id": "gpu",
+      "status": "pass",
+      "summary": "NVIDIA GeForce RTX 3060; 12288 MiB; driver 616.56",
+      "details": {
+        "name": "NVIDIA GeForce RTX 3060",
+        "driver_version": "616.56",
+        "memory_total_mib": 12288,
+        "memory_free_mib": 10998,
+        "compute_capability": "8.6",
+        "cuda_driver_api_version": "13.4",
+        "temperature_c": 51
+      }
+    },
+    {
+      "id": "inference_runtime",
+      "status": "warning",
+      "summary": "CTranslate2 CUDA devices=1; ONNX CUDA provider=no",
+      "details": {
+        "ctranslate2": "4.8.2",
+        "ctranslate2_cuda_devices": 1,
+        "onnxruntime": "1.29.0",
+        "onnx_providers": [
+          "AzureExecutionProvider",
+          "CPUExecutionProvider"
+        ],
+        "ctranslate2_cuda_ready": true,
+        "onnx_cuda_ready": false
+      }
+    },
+    {
+      "id": "media_runtime",
+      "status": "pass",
+      "summary": "Bundled FFmpeg/ffprobe and H.264 encoders ready",
+      "details": {
+        "ffmpeg": "bin/ffmpeg/ffmpeg.exe",
+        "ffmpeg_version": "ffmpeg version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2000-2025 the FFmpeg developers",
+        "ffprobe": "bin/ffmpeg/ffprobe.exe",
+        "ffprobe_version": "ffprobe version 8.0.1-essentials_build-www.gyan.dev Copyright (c) 2007-2025 the FFmpeg developers",
+        "encoders": {
+          "h264_nvenc": true,
+          "libx264": true
+        },
+        "error": ""
+      }
+    },
+    {
+      "id": "resources",
+      "status": "warning",
+      "summary": "Resource inventory recorded; install before relevant stages: cuda_runtime, faster_whisper_models, vieneu_models, sensevoice, piper_voices, diarization, libmpv",
+      "details": {
+        "resources": [
+          {
+            "id": "cuda_runtime",
+            "path": "bin/cuda12_fw",
+            "exists": true,
+            "matching_files": 0,
+            "bytes": 0,
+            "status": "missing"
+          },
+          {
+            "id": "faster_whisper_models",
+            "path": "models/faster_whisper",
+            "exists": true,
+            "matching_files": 0,
+            "bytes": 0,
+            "status": "missing"
+          },
+          {
+            "id": "vieneu_models",
+            "path": "models/vieneu",
+            "exists": false,
+            "matching_files": 0,
+            "bytes": 0,
+            "status": "missing"
+          },
+          {
+            "id": "sensevoice",
+            "path": "models/sensevoice",
+            "exists": false,
+            "matching_files": 0,
+            "bytes": 0,
+            "status": "missing"
+          },
+          {
+            "id": "piper_voices",
+            "path": "models/piper",
+            "exists": false,
+            "matching_files": 0,
+            "bytes": 0,
+            "status": "missing"
+          },
+          {
+            "id": "diarization",
+            "path": "models/pyannote",
+            "exists": false,
+            "matching_files": 0,
+            "bytes": 0,
+            "status": "missing"
+          },
+          {
+            "id": "libmpv",
+            "path": "bin/mpv",
+            "exists": false,
+            "matching_files": 0,
+            "bytes": 0,
+            "status": "missing"
+          },
+          {
+            "id": "voice_samples",
+            "path": "assets/voices",
+            "exists": true,
+            "matching_files": 17,
+            "bytes": 1847609,
+            "status": "ready"
+          }
+        ]
+      }
+    },
+    {
+      "id": "video_probe",
+      "status": "pass",
+      "summary": "Local video opened: 2.000s, 1 video/1 audio streams",
+      "details": {
+        "path": "temp/preflight-smoke.mp4",
+        "size_bytes": 22552,
+        "sha256": "80cf1e88c48588c205faed333a4f54ee67dce819d4f4f30d9d42ee8bd3361802",
+        "duration_seconds": 2.0,
+        "video_streams": 1,
+        "audio_streams": 1,
+        "error": ""
+      }
+    },
+    {
+      "id": "gui_smoke",
+      "status": "pass",
+      "summary": "PySide6 launcher opened offscreen and accepted the local video",
+      "details": {
+        "exit_code": 0,
+        "diagnostic": ""
+      }
+    }
+  ]
+}

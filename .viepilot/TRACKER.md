@@ -3,10 +3,10 @@
 ## Current state
 
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
-- **Status:** Ready for execution
+- **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.1 — Reproducible baseline and preflight
-- **Last activity:** 2026-09-09 — project context, architecture, requirements, UI map and roadmap crystallized
+- **Current task:** 1.1 — Reproducible baseline and preflight (`in_progress`)
+- **Last activity:** 2026-09-10 — Task 1.1 contract refined; environment discovery completed
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
@@ -58,4 +58,4 @@ None. CPU model, provider preference and dominant video type are unknown but con
 
 ## Next action
 
-Run `/vp-auto` for Task 1.1. Do not start feature implementation from crystallize itself.
+Execute and verify Task 1.1 from `.viepilot/phases/01-core-feature-complete/tasks/1.1.md`.
