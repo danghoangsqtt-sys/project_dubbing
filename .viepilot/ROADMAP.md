@@ -13,7 +13,7 @@
 
 **Goal:** Both Chinese→Vietnamese and English→Vietnamese produce editable SRT and a playable dubbed MP4, with save/reopen and visible failure recovery.
 
-**Status:** In progress — 2/13 tasks complete; Day 1 preflight and schema-v2 migration passed on 2026-09-10.
+**Status:** In progress — 3/13 tasks complete; Day 1 preflight, schema-v2 migration, and locked zh/en ASR passed on 2026-09-10.
 
 | Task | Day | Description | Acceptance criteria | Size |
 |---|---:|---|---|---|
@@ -102,7 +102,7 @@ Get-FileHash -Algorithm SHA256 dist/CapCap-0.1.0.zip
 
 | Phase | Status | Tasks | Completed | Progress |
 |---|---|---:|---:|---:|
-| 1. Core Feature Complete | In progress | 13 | 2 | 15% |
+| 1. Core Feature Complete | In progress | 13 | 3 | 23% |
 | 2. RC1 Stability & Performance | Not started | 7 | 0 | 0% |
 | 3. Validation, Package & Report | Not started | 7 | 0 | 0% |
 

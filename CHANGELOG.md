@@ -10,12 +10,14 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 - UI Direction sáu màn hình và design contract `design.md` cho ứng dụng PySide6.
 - Quy trình dựng `.venv` Python 3.11 tái lập được, bộ kiểm tra preflight phần cứng/runtime và báo cáo bằng chứng Day 1.
 - Schema project/segment v2 với ba trường văn bản độc lập, stable cue ID, provenance theo stage và hướng dẫn migration/recovery.
+- Hợp đồng Faster-Whisper cục bộ cho `zh`/`en` với cấu hình/model revision, confidence và provenance trên từng cue.
 
 ### Changed
 
 - Khóa chiến lược milestone: core complete Ngày 7, RC1 Ngày 14, package/report Ngày 21.
 - VieNeu-TTS v3 Turbo là TTS mặc định; Hybrid là profile dịch mặc định; Offline Lock là tùy chọn riêng tư.
 - Lưu project và JSON artifact theo cơ chế atomic replace; project cũ được sao lưu trước khi tự động migrate và có thể phục hồi segment từ artifact legacy.
+- Transcript cache nay bị vô hiệu hóa khi model revision hoặc cấu hình suy luận ASR thay đổi; auto-detect bị chặn trong luồng zh/en đã khóa.
 
 ### Fixed
 
