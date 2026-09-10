@@ -5,7 +5,7 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.6 — VieNeu cue pipeline and timing fit (`ready`)
+- **Current task:** 1.6 — VieNeu cue pipeline and timing fit (`in_progress`)
 - **Last activity:** 2026-09-10 — Task 1.5 completed; atomic SRT, ffprobe validation and single-pass export passed 42 tests
 - **Feature freeze:** Planned at end of Day 7
 
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Start Task 1.6: VieNeu v3 Turbo cue synthesis, silence rejection and bounded timing fit.
+Complete and verify Task 1.6, then continue automatically to Launcher UI Task 1.7.

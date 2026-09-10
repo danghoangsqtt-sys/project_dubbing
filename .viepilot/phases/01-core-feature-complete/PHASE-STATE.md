@@ -3,7 +3,7 @@
 - **Status:** In progress
 - **Progress:** 5/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.6 — VieNeu cue pipeline and timing fit (`ready`)
+- **Current task:** 1.6 — VieNeu cue pipeline and timing fit (`in_progress`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -27,7 +27,7 @@
 | 1.3 | Done | Explicit zh/en, eager inference, editable cues and ASR provenance; `0d6f2fb` |
 | 1.4 | Done | Hybrid/offline policy, optimization, stable mapping and independent dubbing; `545b31e` |
 | 1.5 | Done | Atomic SRT, ffprobe validation, NVENC fallback and one final encode; `3e9a3ea` |
-| 1.6 | Ready | VieNeu cue pipeline and timing fit |
+| 1.6 | In progress | VieNeu quality/silence/speed/audition contract underway |
 | 1.7 | Not started | — |
 | 1.8 | Not started | — |
 | 1.9 | Not started | — |
