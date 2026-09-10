@@ -3,7 +3,7 @@
 - **Status:** In progress
 - **Progress:** 2/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.3 — Lock Faster-Whisper zh/en transcript path (`ready`)
+- **Current task:** 1.3 — Lock Faster-Whisper zh/en transcript path (`in_progress`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -20,7 +20,7 @@
 |---|---|---|
 | 1.1 | Done | `artifacts/evidence/day-1-preflight.json`; final state at the Task 1.1 done tag |
 | 1.2 | Done | Schema v2 migration, atomic persistence and provenance signatures; `b315f69` |
-| 1.3 | Ready | Explicit zh/en Faster-Whisper transcript path |
+| 1.3 | In progress | Contract and stack preflight complete; implementation underway |
 | 1.4 | Not started | — |
 | 1.5 | Not started | — |
 | 1.6 | Not started | — |

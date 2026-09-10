@@ -5,8 +5,8 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.3 — Lock Faster-Whisper zh/en transcript path (`ready`)
-- **Last activity:** 2026-09-10 — Task 1.2 completed; schema v2 migration, atomic save/reopen and provenance tests passed
+- **Current task:** 1.3 — Lock Faster-Whisper zh/en transcript path (`in_progress`)
+- **Last activity:** 2026-09-10 — Task 1.3 contract and Faster-Whisper stack preflight locked
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Refine and start Task 1.3: lock the explicit Chinese/English Faster-Whisper transcript path and persist model revision/configuration on canonical cues.
+Complete Task 1.3 implementation and verification, then advance automatically to Task 1.4.
