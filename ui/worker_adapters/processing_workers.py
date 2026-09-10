@@ -633,7 +633,7 @@ class PrepareWorkflowWorker(QThread):
         self.source_language = source_language
         self.target_language = str(target_language or "vi").strip().lower()
         self.translator_ai = translator_ai
-        self.optimize_subtitles = False
+        self.optimize_subtitles = bool(optimize_subtitles)
         self.translator_style = translator_style
         self.whisper_model_name = whisper_model_name
         self.transcription_engine = transcription_engine

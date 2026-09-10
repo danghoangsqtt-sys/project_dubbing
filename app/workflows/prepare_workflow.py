@@ -335,7 +335,7 @@ class PrepareWorkflow:
         prefetch_voice_speed: float = 1.0,
         step_callback=None,
     ) -> str:
-        optimize_subtitles = False
+        optimize_subtitles = bool(optimize_subtitles)
         if step_callback: step_callback("prepare")
         workflow_started = time.perf_counter()
         is_ocr = transcription_engine == "ocr"

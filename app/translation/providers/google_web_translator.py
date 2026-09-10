@@ -6,6 +6,7 @@ from urllib.parse import quote
 
 import requests
 
+from network_policy import assert_network_allowed
 from ..errors import TranslationProviderError
 
 
@@ -55,6 +56,7 @@ class GoogleWebTranslatorProvider:
         timeout: int = 20,
         max_retries: int = 2,
     ) -> list[str]:
+        assert_network_allowed(self.BASE_URL, purpose="Google web translation")
         if len(texts) <= 3:
             return [
                 self._translate_text(
@@ -99,6 +101,7 @@ class GoogleWebTranslatorProvider:
             f"{self.BASE_URL}?client=gtx&sl={src_lang}&tl={target_lang}"
             f"&dt=t&q={query}"
         )
+        assert_network_allowed(url, purpose="Google web translation")
         headers = {
             "User-Agent": (
                 "Mozilla/5.0 (Windows NT 10.0; Win64; x64) "
@@ -187,6 +190,7 @@ class GoogleWebTranslatorProvider:
         headers: dict,
     ) -> str:
         """Translate one cue through Google's mobile web surface."""
+        assert_network_allowed(self.MOBILE_URL, purpose="Google mobile translation fallback")
         if len(text or "") > self.MOBILE_MAX_CHARS:
             raise TranslationProviderError(
                 f"Google mobile fallback supports at most {self.MOBILE_MAX_CHARS} characters per subtitle."

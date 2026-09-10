@@ -3,6 +3,7 @@ import math
 import os
 import re
 
+from network_policy import offline_lock_enabled
 from .errors import TranslationValidationError
 from .models import TranslationResult
 from .prompt_loader import render_prompt
@@ -11,6 +12,7 @@ from .providers import (
     OpenAICompatiblePolisherProvider,
 )
 from .srt_utils import clone_with_texts, parse_srt, split_text_batches, to_srt, validate_texts
+from .validation import annotate_translation_issues
 
 
 class AIBatchTranslationError(Exception):
@@ -40,9 +42,9 @@ class TranslationOrchestrator:
         source_texts = [s.get("text") or "" for s in segments]
         normalized_src = self._normalize_source_language(src_lang)
         warnings = []
-        optimize_subtitles = False
+        offline = offline_lock_enabled()
 
-        if enable_polish:
+        if enable_polish or offline:
             provider_type, polisher = self._resolve_ai_provider()
             if polisher.is_configured():
                 try:
@@ -73,6 +75,18 @@ class TranslationOrchestrator:
 
                     print(f"[AI Translation] Success: completed via {', '.join(providers_used) or 'AI'}")
                     final_segments = clone_with_texts(segments, translated_texts, provider=provider_type, polished=True)
+                    if optimize_subtitles:
+                        final_segments = self._maybe_optimize_subtitle_segments(
+                            polisher=polisher,
+                            provider_type=provider_type,
+                            source_segments=segments,
+                            translated_segments=final_segments,
+                            src_lang=normalized_src,
+                            target_lang=target_lang,
+                            warnings=warnings,
+                            style_instruction=style_instruction,
+                        )
+                    final_segments = annotate_translation_issues(segments, final_segments)
                     return TranslationResult(
                         success=True,
                         segments=final_segments,
@@ -82,6 +96,14 @@ class TranslationOrchestrator:
                         used_fallback=bool(warnings),
                     )
                 except Exception as exc:
+                    if offline:
+                        return TranslationResult(
+                            success=False,
+                            errors=[f"Offline translation failed: {exc}"],
+                            warnings=warnings,
+                            stage="offline_translation",
+                            primary_provider=provider_type,
+                        )
                     if isinstance(exc, AIBatchTranslationError):
                         msg = "AI batch translation failed. Falling back to Google Translate."
                     else:
@@ -90,6 +112,13 @@ class TranslationOrchestrator:
                     warnings.append(msg)
             else:
                 selected_provider = str(os.getenv("OPENAI_PROVIDER") or "google").strip().lower()
+                if offline:
+                    return TranslationResult(
+                        success=False,
+                        errors=["Offline Lock requires a configured loopback Ollama provider."],
+                        stage="offline_translation",
+                        primary_provider=provider_type,
+                    )
                 if selected_provider != "google":
                     msg = "AI Provider is unavailable. Falling back to Google Translate..."
                     print(f"[AI Translation] WARNING: {msg}")
@@ -122,7 +151,10 @@ class TranslationOrchestrator:
                 raise TranslationValidationError("Google web translate returned an invalid number of segments.")
 
             print("[Translation] Success: Google web translate completed.")
-            final_segments = clone_with_texts(segments, translated_texts, provider="google-web", polished=False)
+            final_segments = annotate_translation_issues(
+                segments,
+                clone_with_texts(segments, translated_texts, provider="google-web", polished=False),
+            )
             return TranslationResult(
                 success=True,
                 segments=final_segments,
@@ -187,16 +219,15 @@ class TranslationOrchestrator:
 
             final_segments = []
             for source_seg, rewritten_text in zip(source_segments, rewritten_texts):
-                final_segments.append(
-                    {
-                        "start": source_seg["start"],
-                        "end": source_seg["end"],
-                        "text": (rewritten_text or "").strip(),
-                        "source_text": source_seg.get("source_text") or source_seg.get("text", ""),
-                        "provider": provider_type,
-                        "polished": True,
-                    }
-                )
+                item = dict(source_seg or {})
+                item.update({
+                    "text": (rewritten_text or "").strip(),
+                    "source_text": source_seg.get("source_text") or source_seg.get("original_text") or source_seg.get("text", ""),
+                    "provider": provider_type,
+                    "polished": True,
+                })
+                final_segments.append(item)
+            final_segments = annotate_translation_issues(source_segments, final_segments)
             return TranslationResult(
                 success=True,
                 segments=final_segments,
@@ -234,6 +265,8 @@ class TranslationOrchestrator:
         # provider definition here is the only place needed to add another
         # OpenAI-compatible service in the future.
         configured_provider = (os.getenv("OPENAI_PROVIDER") or os.getenv("AI_POLISHER_PROVIDER") or "gemini").strip().lower()
+        if offline_lock_enabled():
+            configured_provider = "ollama"
         provider_type = configured_provider
         if provider_type == "gemini":  # backward compatibility for saved settings
             provider_type = "google_ai_studio"
@@ -543,7 +576,7 @@ class TranslationOrchestrator:
                     text,
                     source_seg,
                     draft_text=(translated_seg.get('text') or ''),
-                    single_line=False,
+                    single_line=single_line,
                 )
                 for text, source_seg, translated_seg in zip(optimized_texts, source_segments, translated_segments)
             ]
@@ -551,15 +584,6 @@ class TranslationOrchestrator:
                 raise TranslationValidationError('Subtitle optimization returned invalid text count.')
             print(f"[AI Subtitle Optimization] Success: completed via {' -> '.join(providers_used) or provider_type}")
             optimized_segments = clone_with_texts(translated_segments, normalized_texts, provider=provider_type, polished=True)
-            if single_line:
-                before_count = len(optimized_segments)
-                optimized_segments = self._split_segments_for_single_line(
-                    optimized_segments,
-                    polisher=polisher,
-                    provider_type=provider_type,
-                    target_lang=target_lang,
-                )
-                print(f'[AI Subtitle Optimization] Single-line cue split: {before_count} -> {len(optimized_segments)} cues')
             return optimized_segments
         except Exception as exc:
             msg = f'Subtitle optimization skipped: {exc}'

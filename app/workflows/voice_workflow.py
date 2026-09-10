@@ -238,12 +238,10 @@ class VoiceWorkflow:
 
     def _segment_tts_text(self, seg: dict) -> str:
         current = dict(seg or {})
-        subtitle_text = str(current.get("text") or "").strip()
-        if bool(current.get("voice_edited")):
-            edited_text = str(current.get("tts_text") or current.get("dubbing_vi") or "").strip()
-            if edited_text:
-                return edited_text
-        return subtitle_text
+        dubbing_text = str(current.get("dubbing_vi") or current.get("tts_text") or "").strip()
+        if dubbing_text:
+            return dubbing_text
+        return str(current.get("subtitle_vi") or current.get("text") or "").strip()
 
     def _provider_native_speed(self, *, provider: str, requested_speed: float) -> float:
         return provider_native_speed(provider=provider, requested_speed=requested_speed)
@@ -811,20 +809,44 @@ class VoiceWorkflow:
         prepared = []
         for seg in list(segments or []):
             current = dict(seg or {})
-            subtitle_text = (current.get("text") or "").strip()
+            subtitle_text = (current.get("subtitle_vi") or current.get("text") or "").strip()
+            source_text = (
+                current.get("original_text") or current.get("source_text") or subtitle_text
+            )
             voice_edited = bool(current.get("voice_edited"))
             spoken_text = self._segment_tts_text(current)
             duration_sec = max(0.0, float(current.get("end", 0.0)) - float(current.get("start", 0.0)))
             speech_cost = self._estimate_speech_cost(subtitle_text)
             max_words_vi = self._max_words_vi(duration_sec, speech_cost)
             original_words = self._count_words(subtitle_text)
+            if ai_rewrite_dubbing and not voice_edited and not str(current.get("dubbing_vi") or "").strip():
+                planned_text = self._plan_initial_dubbing_text(
+                    source_text=str(source_text),
+                    subtitle_text=subtitle_text,
+                    duration_sec=duration_sec,
+                    speech_cost=speech_cost,
+                    max_words_vi=max_words_vi,
+                    enabled=True,
+                    source_language=source_language,
+                    style_instruction=style_instruction,
+                )
+                spoken_text, action_taken = self._validate_initial_dubbing_text(
+                    source_text=str(source_text),
+                    subtitle_text=subtitle_text,
+                    dubbing_text=planned_text,
+                    duration_sec=duration_sec,
+                    max_words_vi=max_words_vi,
+                    speech_cost=speech_cost,
+                    voice_provider=voice_provider,
+                )
+            else:
+                action_taken = "manual_voice" if voice_edited else "accept"
             spoken_words = self._count_spoken_words(
                 spoken_text,
                 voice_provider=voice_provider,
                 normalizer_dictionary=normalizer_dictionary,
             )
-            action_taken = "manual_voice" if voice_edited else "accept"
-            current["tts_text"] = spoken_text if voice_edited and spoken_text != subtitle_text else ""
+            current["tts_text"] = spoken_text if spoken_text != subtitle_text else ""
             current["dubbing_vi"] = spoken_text
             current["subtitle_vi"] = subtitle_text
             current["voice_edited"] = voice_edited

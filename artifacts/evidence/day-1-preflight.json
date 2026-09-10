@@ -1,6 +1,6 @@
 {
   "schema_version": 1,
-  "generated_at": "2026-09-10T08:02:43+07:00",
+  "generated_at": "2026-09-10T08:14:25+07:00",
   "project": "CapCap",
   "task": "1.1",
   "privacy": "No .env values, API credentials, media contents or user-home paths are recorded.",
@@ -150,10 +150,10 @@
         "name": "NVIDIA GeForce RTX 3060",
         "driver_version": "616.56",
         "memory_total_mib": 12288,
-        "memory_free_mib": 10628,
+        "memory_free_mib": 10892,
         "compute_capability": "8.6",
         "cuda_driver_api_version": "13.4",
-        "temperature_c": 51
+        "temperature_c": 50
       }
     },
     {

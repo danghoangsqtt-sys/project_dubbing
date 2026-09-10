@@ -48,16 +48,12 @@ def to_srt(segments: list[dict], max_gap_ms: float = 100.0) -> str:
 def clone_with_texts(segments: list[dict], texts: list[str], provider: str, polished: bool = False) -> list[dict]:
     cloned = []
     for seg, text in zip(segments, texts):
-        cloned.append(
-            {
-                "start": seg["start"],
-                "end": seg["end"],
-                "text": (text or "").strip(),
-                "source_text": seg.get("source_text") or seg.get("text", ""),
-                "provider": provider,
-                "polished": polished,
-            }
-        )
+        item = dict(seg or {})
+        item["text"] = (text or "").strip()
+        item["source_text"] = seg.get("source_text") or seg.get("original_text") or seg.get("text", "")
+        item["provider"] = provider
+        item["polished"] = polished
+        cloned.append(item)
     return cloned
 
 

@@ -4289,7 +4289,7 @@ class VideoTranslatorGUI(QMainWindow):
             src_lang=self.get_source_language_code(),
             target_lang=self.get_target_language_code(),
             enable_polish=self.is_ai_polish_enabled(),
-            optimize_subtitles=False,
+            optimize_subtitles=self.is_subtitle_optimization_enabled(),
             style_instruction=self.get_ai_style_instruction(),
         )
 
@@ -5424,6 +5424,13 @@ class VideoTranslatorGUI(QMainWindow):
             return True
         legacy_checkbox = getattr(self, "translator_ai_cb", None)
         return bool(legacy_checkbox and legacy_checkbox.isChecked())
+
+    def is_subtitle_optimization_enabled(self):
+        configured = str(os.getenv("CAPCAP_OPTIMIZE_SUBTITLES", "") or "").strip().lower()
+        if configured:
+            return configured in {"1", "true", "yes", "on", "enabled"}
+        single_line = getattr(self, "subtitle_single_line_cb", None)
+        return bool(single_line and single_line.isChecked())
 
     def is_skip_translation(self):
         # Translation is always part of the fixed Subtitle + Voice workflow.

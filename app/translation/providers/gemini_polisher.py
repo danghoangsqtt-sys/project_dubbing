@@ -3,6 +3,7 @@ import time
 
 from openai import OpenAI
 
+from network_policy import assert_network_allowed
 from ..errors import TranslationConfigError, TranslationProviderError, TranslationValidationError
 from ..prompt_builder import build_translation_messages
 from ..srt_utils import parse_numbered_line_items, validate_texts
@@ -24,6 +25,7 @@ class OpenAICompatiblePolisherProvider:
         return bool(self.api_key and self.model_name and self.base_url)
 
     def _get_client(self):
+        assert_network_allowed(self.base_url, purpose=f"{self.display_name} translation")
         if self._client is None:
             self._client = OpenAI(api_key=self.api_key, base_url=self.base_url)
         return self._client
