@@ -5,8 +5,8 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.9 — Transcript & Translation UI direction (`not_started`)
-- **Last activity:** 2026-09-10 — Task 1.8 completed; Workspace direction aligned and 61 total tests passed
+- **Current task:** 1.9 — Transcript & Translation UI direction (`in_progress`)
+- **Last activity:** 2026-09-10 — Task 1.9 contract restored; transcript/translation UI implementation started
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress

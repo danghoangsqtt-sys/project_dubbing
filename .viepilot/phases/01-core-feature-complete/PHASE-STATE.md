@@ -3,7 +3,7 @@
 - **Status:** In progress
 - **Progress:** 8/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.9 — Transcript & Translation UI direction (`not_started`)
+- **Current task:** 1.9 — Transcript & Translation UI direction (`in_progress`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -36,7 +36,7 @@
 | 1.6 | Done | VieNeu v3 Turbo default, serialized inference, 48 kHz, silence rejection and 0.92–1.12x timing; `c15b741` |
 | 1.7 | Done | Vietnamese readiness/resume/drop launcher aligned with approved direction; `8dbfa60` |
 | 1.8 | Done | Vietnamese five-stage Workspace, observable progress/log and cooperative stop/resume; `f2f6fc6` |
-| 1.9 | Not started | — |
+| 1.9 | In progress | Contract restored; three-field review, issue filters, timestamp validation and selective save underway |
 | 1.10 | Not started | — |
 | 1.11 | Not started | — |
 | 1.12 | Not started | — |
