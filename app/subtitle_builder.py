@@ -1,3 +1,6 @@
+import os
+import tempfile
+
 from core.models import coerce_segments
 
 def format_timestamp(seconds):
@@ -21,10 +24,15 @@ def generate_srt(segments, output_path, max_gap_ms=100.0):
         max_gap_ms (float): Maximum gap in milliseconds to close between
             consecutive segments. Default is 100ms.
     """
+    normalized_segments = coerce_segments(segments)
+    max_gap_s = max_gap_ms / 1000.0
+    target = os.path.abspath(output_path)
+    os.makedirs(os.path.dirname(target) or ".", exist_ok=True)
+    descriptor, temporary_path = tempfile.mkstemp(
+        prefix=f".{os.path.basename(target)}.", suffix=".tmp", dir=os.path.dirname(target)
+    )
     try:
-        normalized_segments = coerce_segments(segments)
-        max_gap_s = max_gap_ms / 1000.0
-        with open(output_path, 'w', encoding='utf-8') as f:
+        with os.fdopen(descriptor, 'w', encoding='utf-8', newline='\n') as f:
             for i, seg in enumerate(normalized_segments, 1):
                 start = format_timestamp(seg.start)
                 end_time = seg.end
@@ -42,12 +50,17 @@ def generate_srt(segments, output_path, max_gap_ms=100.0):
                 f.write(f"{i}\n")
                 f.write(f"{start} --> {end}\n")
                 f.write(f"{text}\n\n")
-
-        print(f"Subtitle generated: {output_path}")
-        return True
-    except Exception as e:
-        print(f"Error generating SRT: {e}")
-        return False
+            f.flush()
+            os.fsync(f.fileno())
+        os.replace(temporary_path, target)
+    except BaseException:
+        try:
+            os.unlink(temporary_path)
+        except OSError:
+            pass
+        raise
+    print("Subtitle generated successfully.")
+    return True
 
 if __name__ == "__main__":
     # Test

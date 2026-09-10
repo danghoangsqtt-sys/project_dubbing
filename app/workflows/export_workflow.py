@@ -2,6 +2,7 @@
 import time
 import re
 
+from media_contract import build_export_plan, probe_media
 from services import EngineRuntime, ProjectService
 
 
@@ -26,11 +27,18 @@ class ExportWorkflow:
         if state:
             self.project_service.update_step(state, "export", "failed")
 
-    def _mark_completed(self, state, output_path: str):
+    def _mark_completed(self, state, output_path: str, report: dict | None = None):
         if not state:
             return
         self.project_service.update_artifact(state, "final_video", output_path, save=False)
         self.project_service.update_step(state, "export", "done", save=False)
+        if report:
+            self.project_service.save_json_artifact(
+                state,
+                "export_report",
+                os.path.join("reports", "latest-export.json"),
+                report,
+            )
         self.project_service.save_project(state)
 
     def _subtitle_options(self, subtitle_style):
@@ -551,6 +559,14 @@ class ExportWorkflow:
         video_quality: str = "medium",
     ) -> str:
         subtitle_style = subtitle_style or {}
+        input_probe = probe_media(video_path)
+        if mode in {"subtitle", "both"} and not (
+            (srt_path and os.path.isfile(srt_path)) or (ass_path and os.path.isfile(ass_path))
+        ):
+            raise FileNotFoundError("Subtitle export requires an existing UTF-8 SRT or ASS file.")
+        if mode in {"voice", "both"} and not (audio_path and os.path.isfile(audio_path)):
+            raise FileNotFoundError("Voice export requires an existing Vietnamese audio track.")
+        export_plan = build_export_plan()
         target_w, target_h = self._resolve_target_dimensions(video_path, output_quality, output_ratio)
         target_fps = self._resolve_target_fps(output_fps)
         # MPV renders the live ASS track on the source frame before its
@@ -697,7 +713,7 @@ class ExportWorkflow:
                     output_scale_mode=output_scale_mode,
                     focus_x=output_fill_focus_x,
                     focus_y=output_fill_focus_y,
-                    output_fps=target_fps,
+                    output_fps=None,
                     video_quality=video_quality,
                 )
                 self._emit_progress(on_progress, 62, "Burning styled subtitles into the final video...")
@@ -724,7 +740,15 @@ class ExportWorkflow:
                 raise ValueError(f"Unsupported export mode: {mode}")
 
             self._emit_progress(on_progress, 95, "Finalizing exported video...")
-            self._mark_completed(state, output_path)
+            output_probe = probe_media(output_path)
+            report = {
+                "mode": mode,
+                "input": input_probe,
+                "output": output_probe,
+                "encoder": export_plan,
+                "srt_independent": True,
+            }
+            self._mark_completed(state, output_path, report)
             self._emit_progress(on_progress, 100, "Export completed.")
             return output_path
         except Exception:
