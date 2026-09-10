@@ -1,9 +1,9 @@
 # Phase 1 State
 
 - **Status:** In progress
-- **Progress:** 5/13 tasks
+- **Progress:** 6/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.6 — VieNeu cue pipeline and timing fit (`in_progress`)
+- **Current task:** 1.7 — Launcher UI direction (`ready`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -17,6 +17,8 @@
 - `docs/asr-transcription.md` — locked zh/en Faster-Whisper behavior and runtime provenance
 - `tests/test_translation_contract.py` — Task 1.4 hybrid/offline/mapping/dubbing contract (7/7 pass, 2026-09-10)
 - `tests/test_media_export_contract.py` — Task 1.5 atomic SRT/probe/single-pass contract (5/5 pass, 2026-09-10)
+- `tests/test_vieneu_timing_contract.py` — Task 1.6 VieNeu serialization/48 kHz/silence/timing/audition contract (7/7 pass, 2026-09-10)
+- `docs/vieneu-timing.md` — VieNeu engine and timing-fit boundary
 
 ## Task status
 
@@ -27,7 +29,7 @@
 | 1.3 | Done | Explicit zh/en, eager inference, editable cues and ASR provenance; `0d6f2fb` |
 | 1.4 | Done | Hybrid/offline policy, optimization, stable mapping and independent dubbing; `545b31e` |
 | 1.5 | Done | Atomic SRT, ffprobe validation, NVENC fallback and one final encode; `3e9a3ea` |
-| 1.6 | In progress | VieNeu quality/silence/speed/audition contract underway |
+| 1.6 | Done | VieNeu v3 Turbo default, serialized inference, 48 kHz, silence rejection and 0.92–1.12x timing; `c15b741` |
 | 1.7 | Not started | — |
 | 1.8 | Not started | — |
 | 1.9 | Not started | — |
@@ -88,3 +90,11 @@
 | 1.5 | `app/workflows/export_workflow.py` |
 | 1.5 | `tests/test_media_export_contract.py` |
 | 1.5 | `docs/media-export.md` |
+| 1.6 | `.viepilot/phases/01-core-feature-complete/tasks/1.6.md` |
+| 1.6 | `app/tts_processor.py` |
+| 1.6 | `app/utils/voice_preview_utils.py` |
+| 1.6 | `app/vieneu_tts.py` |
+| 1.6 | `app/workflows/voice_workflow.py` |
+| 1.6 | `artifacts/evidence/day-1-preflight.json` |
+| 1.6 | `docs/vieneu-timing.md` |
+| 1.6 | `tests/test_vieneu_timing_contract.py` |

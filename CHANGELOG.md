@@ -12,6 +12,7 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 - Schema project/segment v2 với ba trường văn bản độc lập, stable cue ID, provenance theo stage và hướng dẫn migration/recovery.
 - Hợp đồng Faster-Whisper cục bộ cho `zh`/`en` với cấu hình/model revision, confidence và provenance trên từng cue.
 - Xuất SRT UTF-8 atomic và báo cáo ffprobe/encoder cho video đầu ra.
+- Cue audition VieNeu dùng chung biên tổng hợp đã xác thực và lưu provenance model/voice/tốc độ.
 
 ### Changed
 
@@ -26,6 +27,7 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 - Hybrid translation nay fallback có cảnh báo; Offline Lock chặn cloud/Google tại provider boundary và chỉ cho phép loopback Ollama.
 - `optimize_subtitles` không còn bị ép tắt; cue ID, tên/sản phẩm Latin và số được kiểm tra, còn TTS ưu tiên `dubbing_vi` độc lập với phụ đề.
 - Export kết hợp dùng stream-copy ở mux trung gian, chỉ encode video ở lượt cuối và chỉ báo thành công sau khi ffprobe hợp lệ.
+- VieNeu-TTS được tuần tự hóa trên một model owner, giữ PCM 48 kHz, loại âm thanh im lặng và giới hạn time-fit ở 0,92–1,12x với cờ cần duyệt.
 
 ## [0.0.0] - 2026-09-09
 
