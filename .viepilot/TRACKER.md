@@ -5,17 +5,17 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.2 — Canonical segment/state/provenance migration (`in_progress`)
-- **Last activity:** 2026-09-10 — Task 1.2 contract refined; schema/persistence discovery completed
+- **Current task:** 1.3 — Lock Faster-Whisper zh/en transcript path (`ready`)
+- **Last activity:** 2026-09-10 — Task 1.2 completed; schema v2 migration, atomic save/reopen and provenance tests passed
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
 
 ```text
-Phase 1 — Core Feature Complete         [#---------] 1/13
+Phase 1 — Core Feature Complete         [##--------] 2/13
 Phase 2 — RC1 Stability & Performance   [----------] 0/7
 Phase 3 — Validation, Package & Report  [----------] 0/7
-Overall                                 [#---------] 1/27
+Overall                                 [#---------] 2/27
 ```
 
 Existing upstream capabilities are the brownfield baseline; percentages track this 21-day stabilization milestone only.
@@ -48,9 +48,9 @@ Existing upstream capabilities are the brownfield baseline; percentages track th
 
 - Dubbing rewrite is not consistently wired as an independent downstream path.
 - `optimize_subtitles` is forced to false at several entry points.
-- Some cache signatures do not include complete provider/model/prompt provenance.
+- Resolved in Task 1.2: translation/TTS signatures now include provider/engine/model/revision/prompt/schema/normalizer provenance and stable cue inputs.
 
-These are assigned to Tasks 1.2 and 1.4; they are not implementation changes in this crystallize commit.
+The two remaining pipeline P0s are assigned to Task 1.4.
 
 ## Blockers
 
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Start Task 1.2 from `.viepilot/phases/01-core-feature-complete/tasks/1.2.md`: migrate canonical segment/state/provenance safely before changing pipeline behavior.
+Refine and start Task 1.3: lock the explicit Chinese/English Faster-Whisper transcript path and persist model revision/configuration on canonical cues.

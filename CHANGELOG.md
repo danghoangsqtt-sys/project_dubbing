@@ -9,15 +9,17 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 - Bộ project context ViePilot: kiến trúc, requirements, schemas, phase specs và roadmap giao hàng 21 ngày.
 - UI Direction sáu màn hình và design contract `design.md` cho ứng dụng PySide6.
 - Quy trình dựng `.venv` Python 3.11 tái lập được, bộ kiểm tra preflight phần cứng/runtime và báo cáo bằng chứng Day 1.
+- Schema project/segment v2 với ba trường văn bản độc lập, stable cue ID, provenance theo stage và hướng dẫn migration/recovery.
 
 ### Changed
 
 - Khóa chiến lược milestone: core complete Ngày 7, RC1 Ngày 14, package/report Ngày 21.
 - VieNeu-TTS v3 Turbo là TTS mặc định; Hybrid là profile dịch mặc định; Offline Lock là tùy chọn riêng tư.
+- Lưu project và JSON artifact theo cơ chế atomic replace; project cũ được sao lưu trước khi tự động migrate và có thể phục hồi segment từ artifact legacy.
 
 ### Fixed
 
-- Chưa có thay đổi runtime trong lần crystallize này; ba lỗi P0 đã được ghi vào Tasks 1.2/1.4.
+- Cache signature dịch/TTS nay bao gồm producer/model/revision/prompt/schema/normalizer và stable cue input; thay đổi chỉ thuộc mix không làm mất cache TTS.
 
 ## [0.0.0] - 2026-09-09
 
