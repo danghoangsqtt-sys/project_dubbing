@@ -20,7 +20,7 @@
     "feature_freeze_day": 7,
     "final_day": 21,
     "updated_at": "2026-09-10T08:34:32+07:00",
-    "last_evidence": "tests/test_vieneu_timing_contract.py"
+    "last_evidence": ".viepilot/phases/01-core-feature-complete/tasks/1.7.md"
   },
   "workspace_reads": {
     "brainstorm": "docs/brainstorm/session-2026-09-09.md",

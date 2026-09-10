@@ -3,7 +3,7 @@
 - **Status:** In progress
 - **Progress:** 6/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.7 — Launcher UI direction (`ready`)
+- **Current task:** 1.7 — Launcher UI direction (`in_progress`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -30,7 +30,7 @@
 | 1.4 | Done | Hybrid/offline policy, optimization, stable mapping and independent dubbing; `545b31e` |
 | 1.5 | Done | Atomic SRT, ffprobe validation, NVENC fallback and one final encode; `3e9a3ea` |
 | 1.6 | Done | VieNeu v3 Turbo default, serialized inference, 48 kHz, silence rejection and 0.92–1.12x timing; `c15b741` |
-| 1.7 | Not started | — |
+| 1.7 | In progress | Approved Launcher hierarchy, readiness and project-resume UI underway |
 | 1.8 | Not started | — |
 | 1.9 | Not started | — |
 | 1.10 | Not started | — |

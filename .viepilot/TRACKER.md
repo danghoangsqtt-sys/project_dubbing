@@ -5,7 +5,7 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.7 — Launcher UI direction (`ready`)
+- **Current task:** 1.7 — Launcher UI direction (`in_progress`)
 - **Last activity:** 2026-09-10 — Task 1.6 completed; VieNeu cue timing contract passed 49 total tests and hardware/GUI preflight
 - **Feature freeze:** Planned at end of Day 7
 
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Implement and verify Launcher UI Direction Task 1.7 against `design.md` and `launcher.html`.
+Complete and verify Launcher UI Direction Task 1.7, then continue automatically to Workspace UI Task 1.8.
