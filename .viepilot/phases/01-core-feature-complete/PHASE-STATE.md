@@ -1,9 +1,9 @@
 # Phase 1 State
 
 - **Status:** In progress
-- **Progress:** 6/13 tasks
+- **Progress:** 7/13 tasks
 - **Planned days:** 1–7
-- **Current task:** 1.7 — Launcher UI direction (`in_progress`)
+- **Current task:** 1.8 — Workspace UI direction (`ready`)
 - **Entry condition:** Crystallize artifacts validated and committed
 - **Exit gate:** Day 7 Core Feature Complete
 - **Blockers:** None; model packs and ONNX CUDA provider remain readiness warnings assigned to later setup/integration tasks
@@ -19,6 +19,8 @@
 - `tests/test_media_export_contract.py` — Task 1.5 atomic SRT/probe/single-pass contract (5/5 pass, 2026-09-10)
 - `tests/test_vieneu_timing_contract.py` — Task 1.6 VieNeu serialization/48 kHz/silence/timing/audition contract (7/7 pass, 2026-09-10)
 - `docs/vieneu-timing.md` — VieNeu engine and timing-fit boundary
+- `tests/test_launcher_ui.py` — Task 1.7 launcher state/drop/offscreen contract (4/4 pass, 2026-09-10)
+- `artifacts/evidence/task-1.7-launcher.png` — reviewed production Launcher render
 
 ## Task status
 
@@ -30,7 +32,7 @@
 | 1.4 | Done | Hybrid/offline policy, optimization, stable mapping and independent dubbing; `545b31e` |
 | 1.5 | Done | Atomic SRT, ffprobe validation, NVENC fallback and one final encode; `3e9a3ea` |
 | 1.6 | Done | VieNeu v3 Turbo default, serialized inference, 48 kHz, silence rejection and 0.92–1.12x timing; `c15b741` |
-| 1.7 | In progress | Approved Launcher hierarchy, readiness and project-resume UI underway |
+| 1.7 | Done | Vietnamese readiness/resume/drop launcher aligned with approved direction; `8dbfa60` |
 | 1.8 | Not started | — |
 | 1.9 | Not started | — |
 | 1.10 | Not started | — |
@@ -98,3 +100,10 @@
 | 1.6 | `artifacts/evidence/day-1-preflight.json` |
 | 1.6 | `docs/vieneu-timing.md` |
 | 1.6 | `tests/test_vieneu_timing_contract.py` |
+| 1.7 | `.viepilot/phases/01-core-feature-complete/tasks/1.7.md` |
+| 1.7 | `ui/views/launcher.py` |
+| 1.7 | `tests/test_launcher_ui.py` |
+| 1.7 | `tools/render_launcher.py` |
+| 1.7 | `docs/ui-launcher.md` |
+| 1.7 | `artifacts/evidence/task-1.7-launcher.png` |
+| 1.7 | `artifacts/evidence/day-1-preflight.json` |

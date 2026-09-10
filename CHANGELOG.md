@@ -13,6 +13,7 @@ Mọi thay đổi đáng chú ý của nhánh cá nhân này được ghi tại 
 - Hợp đồng Faster-Whisper cục bộ cho `zh`/`en` với cấu hình/model revision, confidence và provenance trên từng cue.
 - Xuất SRT UTF-8 atomic và báo cáo ffprobe/encoder cho video đầu ra.
 - Cue audition VieNeu dùng chung biên tổng hợp đã xác thực và lưu provenance model/voice/tốc độ.
+- Launcher tiếng Việt theo UI Direction với thẻ thiết bị/profile/tài nguyên, tiến độ dự án gần đây và kéo-thả video local.
 
 ### Changed
 

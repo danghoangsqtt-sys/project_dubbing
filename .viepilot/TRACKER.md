@@ -5,17 +5,17 @@
 - **Milestone:** Personal Usable v0.1 — 21-day delivery
 - **Status:** In progress
 - **Current phase:** Phase 1 — Core Feature Complete
-- **Current task:** 1.7 — Launcher UI direction (`in_progress`)
-- **Last activity:** 2026-09-10 — Task 1.6 completed; VieNeu cue timing contract passed 49 total tests and hardware/GUI preflight
+- **Current task:** 1.8 — Workspace UI direction (`ready`)
+- **Last activity:** 2026-09-10 — Task 1.7 completed; approved Launcher direction rendered and 53 total tests passed
 - **Feature freeze:** Planned at end of Day 7
 
 ## Progress
 
 ```text
-Phase 1 — Core Feature Complete         [#####-----] 6/13
+Phase 1 — Core Feature Complete         [#####-----] 7/13
 Phase 2 — RC1 Stability & Performance   [----------] 0/7
 Phase 3 — Validation, Package & Report  [----------] 0/7
-Overall                                 [##--------] 6/27
+Overall                                 [###-------] 7/27
 ```
 
 Existing upstream capabilities are the brownfield baseline; percentages track this 21-day stabilization milestone only.
@@ -58,4 +58,4 @@ None. Task 1.1 records the i7-12700/RTX 3060 workstation. Missing model/native p
 
 ## Next action
 
-Complete and verify Launcher UI Direction Task 1.7, then continue automatically to Workspace UI Task 1.8.
+Implement and verify Workspace UI Direction Task 1.8 against `design.md` and `workspace.html`.
