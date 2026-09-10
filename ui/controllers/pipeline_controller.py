@@ -189,26 +189,30 @@ class PipelineController:
             self._stop_local_worker_server()
             raise
 
-    def _mark_running_project_steps_stopped(self):
+    def _mark_running_project_steps(self, terminal_status: str) -> None:
+        """Persist a terminal status for every stage left running by this run."""
         state = getattr(self.gui, "current_project_state", None)
         steps = getattr(state, "steps", {}) or {}
         for step_name, status in list(steps.items()):
             if status != "running":
                 continue
             try:
-                self.gui.update_project_step(step_name, "failed")
+                self.gui.update_project_step(step_name, terminal_status)
             except Exception:
                 try:
-                    steps[step_name] = "failed"
+                    steps[step_name] = terminal_status
                 except Exception:
                     pass
+
+    def _mark_running_project_steps_stopped(self) -> None:
+        self._mark_running_project_steps("cancelled")
 
     def _on_pipeline_stop(self):
         if self.progress_dialog:
             reply = QMessageBox.question(
                 self.progress_dialog,
-                "Stop Pipeline?",
-                "Stop the current pipeline run? The worker process for this run will be killed.",
+                "Dừng pipeline?",
+                "Dừng tác vụ đang chạy? Các kết quả đã hoàn tất trước đó vẫn được giữ lại.",
                 QMessageBox.Yes | QMessageBox.No,
                 QMessageBox.Yes,
             )
@@ -222,22 +226,23 @@ class PipelineController:
             try:
                 if hasattr(thread, "stop"):
                     thread.stop()
-                if hasattr(thread, "finished"):
-                    thread.finished.disconnect()
-                if hasattr(thread, "progress"):
-                    thread.progress.disconnect()
             except Exception:
                 pass
             try:
                 if thread.isRunning():
+                    thread.requestInterruption()
                     thread.quit()
-                    thread.wait(300)
-                    if thread.isRunning():
-                        thread.terminate()
-                        thread.wait(200)
-            except Exception:
-                pass
-            self.gui.voice_thread = None
+                    if not thread.wait(1500):
+                        self.gui.log(
+                            "[Pipeline] Worker giọng đã nhận yêu cầu dừng nhưng vẫn đang giải phóng tài nguyên; "
+                            "tín hiệu hoàn tất sẽ tiếp tục dọn dẹp."
+                        )
+                    else:
+                        self.gui.voice_thread = None
+                else:
+                    self.gui.voice_thread = None
+            except Exception as exc:
+                self.gui.log(f"[Pipeline] Không thể chờ worker giọng dừng an toàn: {exc}")
 
         current_step = getattr(self.gui, "_pipeline_step", "prepare")
         self.gui._pipeline_active = False
@@ -248,18 +253,18 @@ class PipelineController:
         self._stop_local_worker_server()
         if self.progress_dialog:
             step_to_fail = "voiceover" if current_step == "voiceover" else ("preview" if current_step == "preview" else "ai_process")
-            self.progress_dialog.fail_step(step_to_fail)
-            self.progress_dialog.footer.setText("Pipeline stopped.")
+            self.progress_dialog.cancel_step(step_to_fail)
+            self.progress_dialog.footer.setText("Pipeline đã dừng; dữ liệu hoàn tất trước đó vẫn được giữ.")
             self.progress_dialog.footer.setStyleSheet("color: #FFB86B; font-weight: bold; font-size: 14px; margin-top: 15px;")
             self.progress_dialog.stop_btn.setEnabled(False)
-            self.progress_dialog.stop_btn.setText("Stopped")
+            self.progress_dialog.stop_btn.setText("Đã dừng")
         if hasattr(self.gui, "run_all_btn"):
             self.gui.run_all_btn.setEnabled(True)
-            self.gui.run_all_btn.setText("Generate")
+            self.gui.run_all_btn.setText("Tạo tiếp")
         self.gui.progress_bar.setRange(0, 100)
         self.gui.progress_bar.setValue(0)
         self.gui.refresh_ui_state()
-        self.gui.log("[Pipeline] Stop requested. Background worker processes killed.")
+        self.gui.log("[Pipeline] Đã yêu cầu dừng; các tiến trình nền của lượt chạy đã được đóng.")
 
     
     def _whisper_model_cached(self, model_name: str) -> bool:
@@ -326,11 +331,11 @@ class PipelineController:
         if is_remote_profile():
             # Backend runs separate + transcribe + translate in one batch.
             # Cleaner voice (separation) is handled inside the batch silently.
-            self.progress_dialog.add_step("ai_process", "Subtitle Processing (AI)")
+            self.progress_dialog.add_step("ai_process", "Xử lý phụ đề bằng AI")
         else:
-            self.progress_dialog.add_step("ai_process", "Subtitle Processing (AI)")
-        self.progress_dialog.add_step("voiceover", "Synthesizing AI Voiceover")
-        self.progress_dialog.add_step("preview", "Preparing Video Preview")
+            self.progress_dialog.add_step("ai_process", "Xử lý phụ đề bằng AI")
+        self.progress_dialog.add_step("voiceover", "Tổng hợp giọng đọc")
+        self.progress_dialog.add_step("preview", "Chuẩn bị video xem trước")
         self.progress_dialog.show()
         self.progress_dialog.raise_()
         self.progress_dialog.activateWindow()
@@ -346,7 +351,7 @@ class PipelineController:
                 video_path = getattr(self.gui, "last_video_path", "")
 
         if not video_path or not os.path.exists(video_path):
-            QMessageBox.warning(self.gui, "Error", "Please select a video file first.")
+            QMessageBox.warning(self.gui, "Thiếu video", "Vui lòng chọn video trước khi chạy pipeline.")
             return
 
         # Determine if we need vocal separation based on UI settings
@@ -363,7 +368,7 @@ class PipelineController:
         # UI Feedback
         if hasattr(self.gui, "run_all_btn"):
             self.gui.run_all_btn.setEnabled(False)
-            self.gui.run_all_btn.setText("Processing...")
+            self.gui.run_all_btn.setText("Đang xử lý…")
             
         self._setup_progress_dialog(includes_separation=requires_separation)
         self.progress_dialog.start_step("ai_process")
@@ -428,7 +433,7 @@ class PipelineController:
     def _on_prepare_step_started(self, step_id, message=""):
         # The Prepare workflow runs in a separate local process, so mirror
         # its active phase into the GUI's in-memory project state.  This lets
-        # Stop mark the correct phase failed instead of leaving a stale
+        # Stop can mark the correct phase cancelled instead of leaving a stale
         # completed artifact to drive the sidebar badge.
         if step_id == "translation":
             try:
@@ -438,19 +443,19 @@ class PipelineController:
         if not self.progress_dialog:
             return
         labels = {
-            "prepare": "Preparing project",
-            "extract_audio": "Extracting audio",
-            "extraction": "Extracting audio",
-            "separation": "Separating vocals",
-            "diarization": "Detecting speakers",
-            "transcription": "Transcribing audio",
-            "translation": "Translating subtitles",
-            "done": "Prepare complete",
-            "error": "Prepare failed",
+            "prepare": "Đang chuẩn bị project",
+            "extract_audio": "Đang tách âm thanh",
+            "extraction": "Đang tách âm thanh",
+            "separation": "Đang tách giọng hát",
+            "diarization": "Đang nhận diện người nói",
+            "transcription": "Đang chép lời",
+            "translation": "Đang dịch phụ đề",
+            "done": "Đã chuẩn bị xong",
+            "error": "Chuẩn bị thất bại",
         }
-        label = str(message or labels.get(str(step_id or ""), step_id or "Processing")).strip()
+        label = str(message or labels.get(str(step_id or ""), step_id or "Đang xử lý")).strip()
         if label and self.progress_dialog:
-            self.progress_dialog.footer.setText(f"Prepare: {label}")
+            self.progress_dialog.footer.setText(f"Chuẩn bị: {label}")
             self.progress_dialog.footer.setStyleSheet("color: #9fb7d5; font-size: 13px; margin-top: 15px;")
         if step_id == "transcription":
             self._hide_whisper_download_dialog()
@@ -459,7 +464,7 @@ class PipelineController:
         """Callback when the background PrepareWorkflow finishes completely."""
         self._hide_whisper_download_dialog()
         if run_id is not None and run_id != self.prepare_run_id:
-            self.gui.log("[Pipeline] Ignoring stale prepare result from a stopped run.")
+            self.gui.log("[Pipeline] Bỏ qua kết quả chuẩn bị cũ từ lượt chạy đã dừng.")
             return
         self._stop_prepare_status_polling()
         self._stop_local_worker_server()
@@ -467,8 +472,8 @@ class PipelineController:
             return
 
         if error or not project_state_path:
-            self.pipeline_fail(f"Prepare workflow failed: {error}")
-            self.gui.show_error("Prepare Failed", "Could not complete project preparation.", str(error))
+            self.pipeline_fail(f"Chuẩn bị project thất bại: {error}")
+            self.gui.show_error("Chuẩn bị thất bại", "Không thể hoàn tất bước chuẩn bị project.", str(error))
             return
 
         if self.progress_dialog:
@@ -579,21 +584,28 @@ class PipelineController:
 
     def pipeline_fail(self, reason: str):
         """Safely stops the pipeline and restores UI state on failure."""
+        current_step = getattr(self.gui, "_pipeline_step", "prepare")
         self.gui._pipeline_active = False
+        self.gui._pipeline_step = ""
         self._stop_prepare_status_polling()
+        self._mark_running_project_steps("failed")
         self._stop_local_worker_server()
         
         if self.progress_dialog:
-            current_step = getattr(self.gui, "_pipeline_step", "prepare")
-            self.progress_dialog.fail_step(current_step)
+            dialog_step = (
+                "voiceover" if current_step == "voiceover"
+                else "preview" if current_step == "preview"
+                else "ai_process"
+            )
+            self.progress_dialog.fail_step(dialog_step)
             # Show the error reason in the footer
-            self.progress_dialog.footer.setText(f"FAILED: {reason}")
+            self.progress_dialog.footer.setText(f"LỖI: {reason}")
             self.progress_dialog.footer.setStyleSheet("color: #FF4444; font-weight: bold;")
 
         # Restore UI
         if hasattr(self.gui, "run_all_btn"):
             self.gui.run_all_btn.setEnabled(True)
-            self.gui.run_all_btn.setText("Generate")
+            self.gui.run_all_btn.setText("Tạo tiếp")
         
         self.gui.progress_bar.setRange(0, 100)
         self.gui.progress_bar.setValue(0)
@@ -608,7 +620,7 @@ class PipelineController:
         
         if hasattr(self.gui, "run_all_btn"):
             self.gui.run_all_btn.setEnabled(True)
-            self.gui.run_all_btn.setText("Generate")
+            self.gui.run_all_btn.setText("Tạo tiếp")
             
         self.gui.progress_bar.setRange(0, 100)
         self.gui.progress_bar.setValue(100)

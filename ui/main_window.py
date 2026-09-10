@@ -420,6 +420,48 @@ class VideoTranslatorGUI(QMainWindow):
                 width: 0px;
                 image: none;
             }
+            QPushButton#headerNavBtn {
+                background: transparent;
+                color: #9fb3ca;
+                border: none;
+                border-radius: 6px;
+                padding: 7px 9px;
+            }
+            QPushButton#headerNavBtn:hover, QPushButton#headerNavBtn:checked {
+                background: #203651;
+                color: #ffffff;
+            }
+            QFrame#workspaceStageRail {
+                background: #0b1523;
+                border: 1px solid #263850;
+                border-radius: 10px;
+            }
+            QFrame#workspaceStageRow {
+                background: transparent;
+                border: 1px solid transparent;
+                border-radius: 8px;
+            }
+            QFrame#workspaceStageRow[state="running"], QFrame#workspaceStageRow[state="review"] {
+                background: #17314a;
+                border-color: #315979;
+            }
+            QFrame#workspaceStageRow[state="error"], QFrame#workspaceStageRow[state="cancelled"] {
+                background: #311d27;
+                border-color: #714050;
+            }
+            QLabel#workspaceStepNumber {
+                background: #13283c;
+                color: #8ad7ff;
+                border: 1px solid #345976;
+                border-radius: 11px;
+                font-weight: 800;
+            }
+            QLabel#workspaceStageBadge { color: #9fb3ca; font-size: 10px; font-weight: 700; }
+            QPushButton#dangerActionBtn {
+                background: #4a2430;
+                color: #ffb7c0;
+                border: 1px solid #814356;
+            }
             QMenu#headerMoreMenu, QMenu#generateMenu, QMenu#generateStepMenu {
                 background-color: #0f1724;
                 color: #e6eef9;
@@ -2342,6 +2384,28 @@ class VideoTranslatorGUI(QMainWindow):
         except Exception:
             pass
         self._update_progress_reopen_button()
+
+    def open_workspace_logs(self):
+        button = getattr(self, "workflow_tab_buttons", {}).get("advanced")
+        if button is not None:
+            button.setChecked(True)
+        elif hasattr(self, "left_panel_stack"):
+            self.left_panel_stack.setCurrentIndex(5)
+        self.sync_runtime_log_view()
+
+    def request_workspace_pipeline_stop(self):
+        if not getattr(self, "_pipeline_active", False):
+            return
+        dialog = getattr(getattr(self, "pipeline_controller", None), "progress_dialog", None)
+        stop_button = getattr(dialog, "stop_btn", None)
+        if stop_button is not None and stop_button.isEnabled():
+            stop_button.click()
+
+    def resume_workspace_pipeline(self):
+        if getattr(self, "_pipeline_active", False):
+            return
+        self.log("[Pipeline] Tiếp tục từ trạng thái project đã lưu và tái sử dụng artifact hợp lệ.")
+        self.run_all_pipeline()
 
     def _resource_service(self) -> ResourceDownloadService:
         return ResourceDownloadService(self.workspace_root)
@@ -5544,11 +5608,11 @@ class VideoTranslatorGUI(QMainWindow):
         video_path = self.video_path_edit.text().strip()
         if video_path:
             video_name = os.path.basename(video_path)
-            self.project_title_label.setText(f"Project: {video_name}")
+            self.project_title_label.setText(video_name)
             if hasattr(self, "upload_status_label"):
                 self.upload_status_label.setText(f"[OK] {video_name} uploaded")
         else:
-            self.project_title_label.setText("Project: No video selected")
+            self.project_title_label.setText("Chưa mở video")
             if hasattr(self, "upload_status_label"):
                 self.upload_status_label.setText("No video uploaded yet")
 
@@ -5658,7 +5722,7 @@ class VideoTranslatorGUI(QMainWindow):
         # it must not make the phase look completed while a new translation
         # is running or after the user stopped it.
         translated = (
-            False if translation_status in {"running", "failed"}
+            False if translation_status in {"running", "failed", "cancelled"}
             else translation_status == "done" or bool(artifacts.get("translation_final"))
         )
         tts_skipped = bool(state and state.settings.get("tts_skipped", False))
@@ -5666,36 +5730,47 @@ class VideoTranslatorGUI(QMainWindow):
             artifacts.get("voice_vi") or artifacts.get("mixed_vi") or self.last_voice_vi_path or self.last_mixed_vi_path
         )
         exported = bool(artifacts.get("final_video"))
-        running = str(getattr(self, "_pipeline_step", "") or "") if getattr(self, "_pipeline_active", False) else ""
-        values = {
-            "prepare": (has_video, "prepare"),
-            "transcript": (transcript, "prepare"),
-            "translate": (translated, "translation"),
-            "tts": (voice, "voiceover"),
-            "export": (exported, "export"),
+        from views.start_panel import workspace_stage_summary
+        summary = workspace_stage_summary(
+            has_video=has_video,
+            segments=self.current_segments,
+            translated_segments=getattr(self, "current_translated_segment_models", None)
+                or self.current_translated_segments,
+            steps=steps,
+            artifacts=artifacts,
+            pipeline_active=bool(getattr(self, "_pipeline_active", False)),
+            pipeline_step=str(getattr(self, "_pipeline_step", "") or ""),
+            tts_skipped=tts_skipped,
+        )
+        colors = {
+            "done": "#54d18b", "review": "#ffd400", "running": "#8ad7ff",
+            "error": "#ff6b6b", "cancelled": "#ffb36b", "queued": "#8394aa",
         }
-        for key, (complete, running_step) in values.items():
+        rows = getattr(self, "workflow_stage_rows", {}) or {}
+        for item in summary["items"]:
+            key = item["key"]
             label = labels.get(key)
             if label is not None and key == "translate":
-                provider = self._completed_translation_provider_label() if complete else ""
-                label.setText(f"Translate — {provider}" if provider else "Translate")
+                provider = self._completed_translation_provider_label() if translated else ""
+                label.setText(f"Dịch & kiểm duyệt · {provider}" if provider else "Dịch & kiểm duyệt")
             badge = badges.get(key)
-            if badge is None:
-                continue
-            is_running = running == running_step or (key == "transcript" and running == "prepare")
-            if is_running:
-                text, color = "Processing…", "#f6c453"
-            elif complete:
-                text, color = "✓ Completed", "#6ee7d6"
-            elif key == "tts" and translated:
-                # A translated subtitle track is exportable without a dub.
-                # Keep TTS available for later regeneration, but make its
-                # optional nature obvious in the workflow sidebar.
-                text, color = "Optional", "#8394aa"
-            else:
-                text, color = "Not started", "#8394aa"
-            badge.setText(text)
-            badge.setStyleSheet(f"color: {color}; font-weight: 700;")
+            if badge is not None:
+                badge.setText(item["status"])
+                badge.setStyleSheet(f"color:{colors[item['state']]};font-weight:700;")
+            row = rows.get(key)
+            if row is not None:
+                row.setProperty("state", item["state"])
+                row.style().unpolish(row)
+                row.style().polish(row)
+        progress = int(summary["progress"])
+        if hasattr(self, "workflow_percent_label"):
+            self.workflow_percent_label.setText(f"{progress}%")
+        if hasattr(self, "workflow_overall_progress"):
+            self.workflow_overall_progress.setValue(progress)
+        if hasattr(self, "workspace_stop_btn"):
+            self.workspace_stop_btn.setVisible(bool(getattr(self, "_pipeline_active", False)))
+        if hasattr(self, "workspace_resume_btn"):
+            self.workspace_resume_btn.setVisible(bool(summary["resume_available"]) and not self._pipeline_active)
 
         # Step-by-Step is deliberately linear until translation is complete.
         # Translation remains repeatable, like TTS: users often adjust the
@@ -15033,24 +15108,8 @@ class VideoTranslatorGUI(QMainWindow):
     def run_voiceover_with_progress(self, target_stage="full"):
         existing = getattr(self, "voice_thread", None)
         if existing and existing.isRunning():
-            try:
-                if hasattr(existing, "stop"):
-                    existing.stop()
-                if hasattr(existing, "finished"):
-                    existing.finished.disconnect()
-                if hasattr(existing, "progress"):
-                    existing.progress.disconnect()
-            except Exception:
-                pass
-            try:
-                existing.quit()
-                existing.wait(300)
-                if existing.isRunning():
-                    existing.terminate()
-                    existing.wait(200)
-            except Exception:
-                pass
-            self.voice_thread = None
+            self.log("[Voiceover] Tác vụ tạo giọng đang chạy; dùng nút Dừng tác vụ trước khi chạy lại.")
+            return
         self._pipeline_active = True
         self._pipeline_step = "voiceover"
         self.pipeline_controller.target_stage = str(target_stage or "full")

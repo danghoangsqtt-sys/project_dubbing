@@ -2,7 +2,7 @@ import os
 
 from PySide6.QtCore import QTimer, Qt
 from PySide6.QtGui import QColor, QImage, QPixmap
-from PySide6.QtWidgets import QFrame, QHBoxLayout, QLabel, QMenu, QPushButton, QScrollArea, QVBoxLayout, QWidget
+from PySide6.QtWidgets import QButtonGroup, QFrame, QHBoxLayout, QLabel, QMenu, QPushButton, QScrollArea, QVBoxLayout, QWidget
 
 from .advanced_tabs import build_advanced_group
 from .preview_panel import build_preview_panel
@@ -22,6 +22,24 @@ class _TitleBar(QFrame):
 
     def mouseReleaseEvent(self, event):
         super().mouseReleaseEvent(event)
+
+
+def workspace_navigation_target(key: str) -> tuple[str, int | None]:
+    return {
+        "studio": ("page", 0),
+        "translation": ("page", 2),
+        "voice": ("page", 3),
+        "resources": ("resources", None),
+    }.get(str(key or "").strip().lower(), ("page", 0))
+
+
+def _activate_workspace_nav(gui, key: str) -> None:
+    action, index = workspace_navigation_target(key)
+    if action == "resources":
+        gui.open_resource_manager_dialog()
+        return
+    if index is not None and hasattr(gui, "left_panel_stack"):
+        gui.left_panel_stack.setCurrentIndex(index)
 
 
 def build_main_window_ui(gui):
@@ -84,50 +102,67 @@ def _build_header_bar(gui):
     layout.addWidget(brand_label)
     gui.header_brand_label = brand_label
 
-    gui.project_title_label = QLabel("Project: No video selected")
+    gui.project_title_label = QLabel("Chưa mở video")
     gui.project_title_label.setObjectName("statusHeadline")
     layout.addWidget(gui.project_title_label, 1)
+
+    gui.header_nav_group = QButtonGroup(header)
+    gui.header_nav_group.setExclusive(True)
+    gui.header_nav_buttons = {}
+    for key, text in (("studio", "Studio"), ("translation", "Bản dịch"),
+                      ("voice", "Lồng tiếng"), ("resources", "Tài nguyên")):
+        button = QPushButton(text)
+        button.setObjectName("headerNavBtn")
+        button.setCheckable(key != "resources")
+        button.setChecked(key == "studio")
+        button.setAccessibleName(f"Đi tới {text}")
+        button.clicked.connect(lambda _checked=False, nav_key=key: _activate_workspace_nav(gui, nav_key))
+        if key != "resources":
+            gui.header_nav_group.addButton(button)
+        gui.header_nav_buttons[key] = button
+        layout.addWidget(button)
+
+    gui.preview_5s_btn.setObjectName("secondaryActionBtn")
+    gui.preview_5s_btn.setMinimumHeight(42)
+    gui.preview_5s_btn.setMinimumWidth(140)
+    gui.preview_5s_btn.setToolTip("Render 5 giây với đúng kiểu phụ đề khi xuất")
+    layout.addWidget(gui.preview_5s_btn)
     gui.run_all_btn.setMinimumHeight(42)
     layout.addWidget(gui.run_all_btn)
     gui.export_btn.setObjectName("secondaryActionBtn")
     gui.export_btn.setMinimumHeight(42)
     layout.addWidget(gui.export_btn)
-    gui.preview_5s_btn.setObjectName("secondaryActionBtn")
-    gui.preview_5s_btn.setMinimumHeight(42)
-    gui.preview_5s_btn.setMinimumWidth(140)
-    gui.preview_5s_btn.setToolTip("Render five seconds with final export subtitle styling")
-    layout.addWidget(gui.preview_5s_btn)
 
-    gui.toggle_panel_btn = QPushButton("Control")
+    gui.toggle_panel_btn = QPushButton("Điều khiển")
     gui.toggle_panel_btn.setObjectName("secondaryActionBtn")
     gui.toggle_panel_btn.setMinimumHeight(42)
     gui.toggle_panel_btn.setMinimumWidth(180)
-    gui.toggle_panel_btn.setToolTip("Toggle side panel")
-    gui.toggle_panel_btn.setText("Controls")
+    gui.toggle_panel_btn.setToolTip("Ẩn hoặc hiện bảng điều khiển")
+    gui.toggle_panel_btn.setText("Điều khiển")
     gui.toggle_panel_btn.clicked.connect(gui.toggle_controls_panel)
     # Hide the toggle button - the workflow panel is always visible.
     gui.toggle_panel_btn.setVisible(False)
     layout.addWidget(gui.toggle_panel_btn)
 
-    gui.more_actions_btn = QPushButton("More")
+    gui.more_actions_btn = QPushButton("Thêm")
     gui.more_actions_btn.setObjectName("secondaryActionBtn")
     gui.more_actions_btn.setMinimumHeight(42)
     gui.more_actions_btn.setMinimumWidth(180)
     more_menu = QMenu(gui.more_actions_btn)
     more_menu.setObjectName("headerMoreMenu")
 
-    gui.download_subtitle_action = more_menu.addAction("Export Translated SRT…")
+    gui.download_subtitle_action = more_menu.addAction("Xuất SRT tiếng Việt…")
     gui.download_subtitle_action.triggered.connect(gui.download_subtitle)
-    gui.download_original_action = more_menu.addAction("Export Source SRT…")
+    gui.download_original_action = more_menu.addAction("Xuất SRT nguồn…")
     gui.download_original_action.triggered.connect(gui.download_original_script)
-    gui.preview_5s_action = more_menu.addAction("Fast Preview (5 seconds)")
+    gui.preview_5s_action = more_menu.addAction("Xem nhanh 5 giây")
     gui.preview_5s_action.triggered.connect(gui.preview_5s_btn.click)
     more_menu.addSeparator()
-    gui.clean_project_action = more_menu.addAction("Clean")
+    gui.clean_project_action = more_menu.addAction("Dọn project")
     gui.clean_project_action.triggered.connect(gui.clean_current_project)
-    gui.exit_project_action = more_menu.addAction("Exit")
+    gui.exit_project_action = more_menu.addAction("Thoát project")
     gui.exit_project_action.triggered.connect(gui.exit_to_launcher)
-    gui.settings_action = more_menu.addAction("Settings")
+    gui.settings_action = more_menu.addAction("Cài đặt")
     gui.settings_action.triggered.connect(gui.open_model_settings_dialog)
     gui.more_actions_btn.setMenu(more_menu)
     layout.addWidget(gui.more_actions_btn)
@@ -135,14 +170,14 @@ def _build_header_bar(gui):
 
     gui.titlebar_min_btn = QPushButton("—")
     gui.titlebar_min_btn.setFixedSize(38, 38)
-    gui.titlebar_min_btn.setToolTip("Minimize")
+    gui.titlebar_min_btn.setToolTip("Thu nhỏ")
     gui.titlebar_min_btn.setStyleSheet("QPushButton { background: transparent; color: #a0b4cc; font-size: 16px; font-weight: bold; border-radius: 4px; } QPushButton:hover { background: #223248; color: #fff; }")
     gui.titlebar_min_btn.clicked.connect(gui.showMinimized)
     layout.addWidget(gui.titlebar_min_btn)
 
     gui.titlebar_close_btn = QPushButton("✕")
     gui.titlebar_close_btn.setFixedSize(38, 38)
-    gui.titlebar_close_btn.setToolTip("Close")
+    gui.titlebar_close_btn.setToolTip("Đóng")
     gui.titlebar_close_btn.setStyleSheet("QPushButton { background: transparent; color: #a0b4cc; font-size: 14px; font-weight: bold; border-radius: 4px; } QPushButton:hover { background: #e34f4f; color: #fff; }")
     gui.titlebar_close_btn.clicked.connect(gui.close)
     layout.addWidget(gui.titlebar_close_btn)

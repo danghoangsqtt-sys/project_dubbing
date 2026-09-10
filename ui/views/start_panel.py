@@ -25,6 +25,137 @@ from PySide6.QtWidgets import (
 from widgets.spin_boxes import ReliableDoubleSpinBox, ReliableSpinBox
 
 
+WORKSPACE_STAGES = (
+    ("prepare", "Chuẩn bị media", 20),
+    ("transcript", "Chép lời", 20),
+    ("translate", "Dịch & kiểm duyệt", 24),
+    ("tts", "Tạo giọng", 18),
+    ("export", "Trộn & xuất", 18),
+)
+
+
+def _segment_qa_count(segments) -> int:
+    count = 0
+    for segment in list(segments or []):
+        flags = segment.get("qa_flags", []) if isinstance(segment, dict) else getattr(segment, "qa_flags", [])
+        if flags:
+            count += 1
+    return count
+
+
+def workspace_stage_summary(
+    *, has_video: bool, segments=None, translated_segments=None, steps=None,
+    artifacts=None, pipeline_active: bool = False, pipeline_step: str = "",
+    tts_skipped: bool = False,
+) -> dict:
+    """Map persisted project facts to the five approved Workspace stages."""
+    steps = dict(steps or {})
+    artifacts = dict(artifacts or {})
+    transcript_ready = bool(segments) or bool(artifacts.get("transcript_segments"))
+    translation_status = str(steps.get("translate_raw", "") or "").lower()
+    translated_ready = (
+        translation_status == "done" or bool(translated_segments) or bool(artifacts.get("translation_final"))
+    ) and translation_status not in {"running", "failed", "cancelled"}
+    voice_ready = bool(artifacts.get("voice_vi") or artifacts.get("mixed_vi"))
+    export_ready = bool(artifacts.get("final_video")) or str(steps.get("export", "")).lower() == "done"
+    running_key = {
+        "prepare": "prepare", "translation": "translate", "voiceover": "tts", "preview": "export",
+    }.get(str(pipeline_step or "").lower(), "") if pipeline_active else ""
+
+    completed = {
+        "prepare": bool(has_video),
+        "transcript": transcript_ready,
+        "translate": translated_ready,
+        "tts": voice_ready,
+        "export": export_ready,
+    }
+    step_keys = {
+        "prepare": ("extract_audio",),
+        "transcript": ("transcribe",),
+        "translate": ("translate_raw", "refine_translation"),
+        "tts": ("generate_tts", "mix_audio"),
+        "export": ("export",),
+    }
+    qa_count = _segment_qa_count(translated_segments)
+    items = []
+    progress = 0
+    resume_available = False
+    for index, (key, label, weight) in enumerate(WORKSPACE_STAGES, 1):
+        persisted = {str(steps.get(name, "") or "").lower() for name in step_keys[key]}
+        if running_key == key or "running" in persisted:
+            state, status_text = "running", "● Đang chạy"
+            progress += weight // 2
+        elif "cancelled" in persisted:
+            state, status_text = "cancelled", "● Đã dừng"
+            resume_available = True
+        elif "failed" in persisted:
+            state, status_text = "error", "● Lỗi"
+            resume_available = True
+        elif key == "tts" and (tts_skipped or "skipped" in persisted):
+            state, status_text = "done", "● Bỏ qua"
+            progress += weight
+        elif completed[key]:
+            if key == "translate":
+                state = "review"
+                status_text = f"● {qa_count} vấn đề" if qa_count else "● Cần duyệt"
+            else:
+                state, status_text = "done", "● Xong"
+            progress += weight
+        else:
+            state, status_text = "queued", "Chờ"
+        items.append({"index": index, "key": key, "label": label, "state": state, "status": status_text})
+    return {"items": items, "progress": max(0, min(100, progress)), "resume_available": resume_available}
+
+
+def build_workspace_stage_rail(gui) -> QFrame:
+    shell = QFrame()
+    shell.setObjectName("workspaceStageRail")
+    layout = QVBoxLayout(shell)
+    layout.setContentsMargins(10, 10, 10, 10)
+    layout.setSpacing(5)
+    header = QHBoxLayout()
+    title = QLabel("Quy trình")
+    title.setObjectName("statusHeadline")
+    gui.workflow_percent_label = QLabel("0%")
+    gui.workflow_percent_label.setObjectName("statusPill")
+    header.addWidget(title)
+    header.addStretch(1)
+    header.addWidget(gui.workflow_percent_label)
+    layout.addLayout(header)
+    gui.workflow_overall_progress = QProgressBar()
+    gui.workflow_overall_progress.setRange(0, 100)
+    gui.workflow_overall_progress.setValue(0)
+    gui.workflow_overall_progress.setTextVisible(False)
+    gui.workflow_overall_progress.setFixedHeight(6)
+    layout.addWidget(gui.workflow_overall_progress)
+
+    gui.workflow_stage_badges = {}
+    gui.workflow_stage_labels = {}
+    gui.workflow_stage_rows = {}
+    for index, (key, label_text, _weight) in enumerate(WORKSPACE_STAGES, 1):
+        row_widget = QFrame()
+        row_widget.setObjectName("workspaceStageRow")
+        row_widget.setProperty("state", "queued")
+        row = QHBoxLayout(row_widget)
+        row.setContentsMargins(7, 6, 7, 6)
+        row.setSpacing(8)
+        step = QLabel(str(index))
+        step.setObjectName("workspaceStepNumber")
+        step.setAlignment(Qt.AlignCenter)
+        step.setFixedSize(22, 22)
+        label = QLabel(label_text)
+        badge = QLabel("Chờ")
+        badge.setObjectName("workspaceStageBadge")
+        row.addWidget(step)
+        row.addWidget(label, 1)
+        row.addWidget(badge)
+        layout.addWidget(row_widget)
+        gui.workflow_stage_badges[key] = badge
+        gui.workflow_stage_labels[key] = label
+        gui.workflow_stage_rows[key] = row_widget
+    return shell
+
+
 def _section_title(text):
     label = QLabel(text)
     label.setObjectName("sectionTitle")
@@ -204,16 +335,16 @@ def build_start_group(gui, left_layout):
     gui.run_all_btn = QToolButton()
     gui.run_all_btn.setObjectName("mainActionBtn")
     gui.run_all_btn.setPopupMode(QToolButton.MenuButtonPopup)
-    gui._generate_full_action = QAction("Generate Full Pipeline", gui.run_all_btn)
+    gui._generate_full_action = QAction("Tạo tiếp toàn bộ", gui.run_all_btn)
     gui._generate_full_action.triggered.connect(gui.run_all_pipeline)
     gui.run_all_btn.setDefaultAction(gui._generate_full_action)
     gui._generate_menu = None
 
-    gui.export_btn = QPushButton("Export")
+    gui.export_btn = QPushButton("Xuất")
     gui.export_btn.setObjectName("mainActionBtn")
     gui.export_btn.clicked.connect(gui.export_final_video)
 
-    gui.preview_5s_btn = QPushButton("Fast Preview")
+    gui.preview_5s_btn = QPushButton("Xem nhanh")
     gui.preview_5s_btn.clicked.connect(gui.preview_five_seconds)
     gui.preview_frame_btn = QPushButton("Open Large Frame Preview")
     gui.preview_frame_btn.clicked.connect(gui.preview_exact_frame)
@@ -226,35 +357,7 @@ def build_start_group(gui, left_layout):
     workflow_shell, workflow_shell_layout = _section_card()
     workflow_shell_layout.setSpacing(12)
 
-    workflow_title = QLabel("Workflow")
-    workflow_title.setObjectName("statusHeadline")
-    workflow_shell_layout.addWidget(workflow_title)
-
-    # Generation milestones remain visible while users work through the
-    # configuration pages below.
-    gui.workflow_stage_badges = {}
-    # Keep the label widgets too: the Translate label is updated with the
-    # provider that actually completed the most recent translation.
-    gui.workflow_stage_labels = {}
-    stage_box = QFrame()
-    stage_box.setObjectName("statusCard")
-    stage_layout = QVBoxLayout(stage_box)
-    stage_layout.setContentsMargins(10, 8, 10, 8)
-    stage_layout.setSpacing(4)
-    for key, title in (("prepare", "Prepare"), ("transcript", "Transcript"),
-                       ("translate", "Translate"), ("tts", "Generate Voice / TTS (Optional)"),
-                       ("export", "Export")):
-        row = QHBoxLayout()
-        label = QLabel(title)
-        status = QLabel("Not started")
-        status.setObjectName("helperLabel")
-        row.addWidget(label)
-        row.addStretch(1)
-        row.addWidget(status)
-        stage_layout.addLayout(row)
-        gui.workflow_stage_badges[key] = status
-        gui.workflow_stage_labels[key] = label
-    workflow_shell_layout.addWidget(stage_box)
+    workflow_shell_layout.addWidget(build_workspace_stage_rail(gui))
 
     gui.device_mode_label = QLabel()
     gui.device_mode_label.setObjectName("helperLabel")
@@ -329,13 +432,13 @@ def build_start_group(gui, left_layout):
         return btn
 
     _add_tab("Media", 0, "media", checked=True)
-    gui.audio_tab_btn = _add_tab("Audio", 1, "audio")
+    gui.audio_tab_btn = _add_tab("Âm thanh", 1, "audio")
     gui.audio_tab_btn.setEnabled(False)
-    _add_tab("Language", 2, "language")
-    _add_tab("Voice", 3, "voice")
-    _add_tab("Style", 4, "style")
-    _add_tab("Advanced", 5, "advanced")
-    gui.show_progress_btn = QPushButton("Show Progress")
+    _add_tab("Ngôn ngữ", 2, "language")
+    _add_tab("Giọng", 3, "voice")
+    _add_tab("Kiểu chữ", 4, "style")
+    _add_tab("Nâng cao", 5, "advanced")
+    gui.show_progress_btn = QPushButton("Mở tiến độ")
     gui.show_progress_btn.clicked.connect(gui.show_active_progress_dialog)
     gui.show_progress_btn.setVisible(False)
     gui.show_progress_btn.setEnabled(False)
@@ -345,6 +448,23 @@ def build_start_group(gui, left_layout):
     gui.show_progress_btn.setSizePolicy(QSizePolicy.Expanding, QSizePolicy.Fixed)
     tab_bar_layout.addWidget(gui.show_progress_btn, 3, 0, 1, 2)
     workflow_shell_layout.addWidget(tab_bar)
+
+    operation_row = QHBoxLayout()
+    gui.workspace_log_btn = QPushButton("Nhật ký")
+    gui.workspace_log_btn.setObjectName("workflowTabBtn")
+    gui.workspace_log_btn.clicked.connect(gui.open_workspace_logs)
+    gui.workspace_stop_btn = QPushButton("Dừng tác vụ")
+    gui.workspace_stop_btn.setObjectName("dangerActionBtn")
+    gui.workspace_stop_btn.clicked.connect(gui.request_workspace_pipeline_stop)
+    gui.workspace_stop_btn.hide()
+    gui.workspace_resume_btn = QPushButton("Tiếp tục")
+    gui.workspace_resume_btn.setObjectName("mainActionBtn")
+    gui.workspace_resume_btn.clicked.connect(gui.resume_workspace_pipeline)
+    gui.workspace_resume_btn.hide()
+    operation_row.addWidget(gui.workspace_log_btn)
+    operation_row.addWidget(gui.workspace_stop_btn)
+    operation_row.addWidget(gui.workspace_resume_btn)
+    workflow_shell_layout.addLayout(operation_row)
 
     upload_card, upload_layout = _build_collapsible_section("Video")
     upload_card.hide()
