@@ -87,6 +87,13 @@ class EngineRuntime:
     def transcribe_audio(self, audio_path: str, model_path: str, *, language: str):
         return self.whisper.transcribe(audio_path, model_path, language=language)
 
+    def describe_whisper_configuration(self, model_path: str, *, language: str, use_batched: bool = True):
+        return self.whisper.configuration(
+            model_path,
+            language=language,
+            use_batched=use_batched,
+        )
+
     def transcribe_video_ocr(self, video_path: str, *, region: str = "bottom", **kwargs):
         return self.ocr.transcribe(video_path, region=region, **kwargs)
 

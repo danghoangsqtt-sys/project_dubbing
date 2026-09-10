@@ -355,6 +355,9 @@ class AsrMergeService:
                     "words": [],
                     "chunk_id": chunk.chunk_id,
                 }
+                for key in ("source_language", "confidence", "asr_provenance"):
+                    if key in raw_segment:
+                        global_segment[key] = raw_segment.get(key)
                 words = []
                 for word in raw_segment.get("words", []) or []:
                     try:

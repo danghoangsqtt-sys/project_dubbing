@@ -141,7 +141,16 @@ class PrepareWorkflow:
         self.project_service.save_project(project_state)
         return str(profile["path"] or source)
 
-    def _transcribe_long_audio_chunked(self, *, audio_path: str, project_state, model_path: str, language: str, on_chunk_ready=None):
+    def _transcribe_long_audio_chunked(
+        self,
+        *,
+        audio_path: str,
+        project_state,
+        model_path: str,
+        language: str,
+        asr_config: dict | None = None,
+        on_chunk_ready=None,
+    ):
         overall_started = time.perf_counter()
         chunk_dir = self.project_service.build_path(project_state, "audio", "chunks")
         chunk_cache_dir = self.project_service.build_path(project_state, "analysis", "chunk_results")
@@ -159,6 +168,7 @@ class PrepareWorkflow:
             "silence_noise": self.CHUNK_SILENCE_NOISE,
             "silence_duration_seconds": self.CHUNK_SILENCE_DURATION_SECONDS,
             "min_speech_duration_seconds": 0.05,
+            "asr": dict(asr_config or {}),
         }
         self.project_service.save_json_artifact(
             project_state,
@@ -338,6 +348,9 @@ class PrepareWorkflow:
             speaker_diarization_num_speakers = -1
         is_sensevoice = transcription_engine == "sensevoice"
         is_capcut = transcription_engine == "capcut"
+        is_locked_whisper = (
+            transcription_engine == "whisper" and not is_remote_profile()
+        )
 
         # The GUI runs the same checks before launching the worker.  Repeat
         # them here because a frozen worker can have a different import or
@@ -373,6 +386,13 @@ class PrepareWorkflow:
         # doing so turns a selected Base/Small model into an invalid path and
         # makes the loader fall back to the legacy Medium alias.
         whisper_model = str(whisper_model_name or "medium").strip() if not is_sensevoice else ""
+        whisper_config = {}
+        if is_locked_whisper:
+            whisper_config = self.engine_runtime.describe_whisper_configuration(
+                whisper_model,
+                language=source_language,
+            )
+            source_language = str(whisper_config["source_language"])
         raw_segments = []
         segment_models = []
         streamed_translation_executor = None
@@ -390,6 +410,8 @@ class PrepareWorkflow:
             project_state.set_setting("sensevoice_model", sensevoice_model_dir)
         else:
             project_state.set_setting("whisper_model", whisper_model)
+        if whisper_config:
+            project_state.set_setting("asr_config", whisper_config)
         project_state.set_setting("audio_handling_mode", audio_handling_mode)
         project_state.set_setting("transcription_engine", transcription_engine)
         project_state.set_setting("speaker_diarization_enabled", speaker_diarization)
@@ -703,6 +725,7 @@ class PrepareWorkflow:
                 # so a project cannot reuse an aggressively regrouped
                 # transcript. Raw per-chunk ASR cache entries remain valid.
                 audio_handling_mode=f"{audio_mode_key}|asr-merge-v4",
+                asr_config=whisper_config,
             )
             cached_transcription_signature = str(project_state.settings.get("transcription_signature", "") or "").strip()
             cached_transcript_path = project_state.artifacts.get("transcript_segments", "")
@@ -824,6 +847,7 @@ class PrepareWorkflow:
                         project_state=project_state,
                         model_path=whisper_model,
                         language=source_language,
+                        asr_config=whisper_config,
                         on_chunk_ready=_on_chunk_ready if streamed_translation_enabled else None,
                     )
                     if streamed_translation_enabled:
@@ -842,7 +866,19 @@ class PrepareWorkflow:
                     project_state.set_step_status("transcribe", "failed")
                     self.project_service.save_project(project_state)
                     raise RuntimeError("Transcription failed.")
-                segment_models = self.segment_service.transcript_dicts_to_models(raw_segments)
+                effective_asr_config = next(
+                    (
+                        dict(segment.get("asr_provenance", {}) or {})
+                        for segment in raw_segments
+                        if isinstance(segment, dict) and segment.get("asr_provenance")
+                    ),
+                    whisper_config,
+                )
+                segment_models = self.segment_service.transcript_dicts_to_models(
+                    raw_segments,
+                    source_language=source_language if is_locked_whisper else "",
+                    asr_provenance=effective_asr_config if is_locked_whisper else None,
+                )
                 project_state.set_setting("transcription_signature", transcription_signature)
             if diarization_future is not None:
                 try:
@@ -888,6 +924,34 @@ class PrepareWorkflow:
             for segment in segment_models:
                 if not segment.source_language:
                     segment.source_language = str(source_language or "").strip().lower()
+                if is_locked_whisper:
+                    cue_asr = dict(segment.provenance.get("asr", {}) or {})
+                    if not cue_asr:
+                        cue_asr = dict(
+                            (project_state.provenance.get("asr", {}) or {}).get("config", {})
+                            or whisper_config
+                        )
+                        segment.set_provenance("asr", cue_asr)
+            if is_locked_whisper:
+                effective_asr_config = dict(
+                    next(
+                        (
+                            segment.provenance.get("asr", {})
+                            for segment in segment_models
+                            if segment.provenance.get("asr")
+                        ),
+                        whisper_config,
+                    )
+                )
+                project_state.set_setting("asr_config", effective_asr_config)
+                project_state.set_provenance(
+                    "asr",
+                    {
+                        "engine": "faster-whisper",
+                        "input_signature": transcription_signature,
+                        "config": effective_asr_config,
+                    },
+                )
             project_state.set_segments(segment_models)
             self.project_service.save_json_artifact(
                 project_state,

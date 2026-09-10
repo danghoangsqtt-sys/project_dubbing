@@ -3,8 +3,10 @@ import shutil
 import subprocess
 import threading
 import traceback
+import math
 from pathlib import Path
 
+from asr_config import make_faster_whisper_config, normalize_source_language
 from runtime_paths import bin_path, models_path, workspace_root, subprocess_hidden_kwargs, subprocess_text_kwargs
 from services.resource_download_service import ResourceDownloadService
 
@@ -113,9 +115,7 @@ def _resolve_model_name(model_path):
 
 
 def _normalize_language(language):
-    if not language or language == "auto":
-        return None
-    return language
+    return normalize_source_language(language)
 
 
 def _workspace_root():
@@ -346,7 +346,9 @@ def _load_whisper_model(model_name):
 
 def load_whisper_model(model_path):
     model_name = _resolve_model_name(model_path)
-    return _load_whisper_model(model_name)
+    model = _load_whisper_model(model_name)
+    setattr(model, "_capcap_model_name", str(model_name))
+    return model
 
 
 def unload_whisper_models():
@@ -386,6 +388,34 @@ def _whisper_gpu_batch_size() -> int:
     return 8 if _gpu_memory_mb() >= 5500 else 4
 
 
+def describe_whisper_configuration(
+    model_path: str,
+    *,
+    language: str,
+    model=None,
+    use_batched: bool = True,
+) -> dict:
+    """Resolve the cache/provenance contract without running inference."""
+
+    requested_model = str(model_path or "medium").strip()
+    resolved_model = _resolve_model_name(requested_model)
+    runtime = _detect_faster_whisper_runtime()
+    effective_device = str(getattr(model, "_capcap_runtime_device", "") or runtime["device"])
+    compute_type = "int8" if effective_device == "cpu" else str(runtime["compute_type"])
+    batch_size = _whisper_gpu_batch_size() if use_batched and effective_device == "cuda" else 0
+    requested_device = str(os.getenv("CAPCAP_WHISPER_DEVICE", "auto") or "auto").strip().lower()
+    return make_faster_whisper_config(
+        language=language,
+        requested_model=requested_model,
+        resolved_model=resolved_model,
+        requested_device=requested_device,
+        effective_device=effective_device,
+        compute_type=compute_type,
+        use_batched=use_batched,
+        batch_size=batch_size,
+    ).to_dict()
+
+
 def _is_cuda_memory_error(exc: Exception) -> bool:
     detail = str(exc).lower()
     return any(token in detail for token in (
@@ -416,17 +446,25 @@ def _get_batched_whisper_pipeline(model):
     return pipeline
 
 
-def transcribe_audio_with_model(model, audio_path, *, language="auto", task="transcribe", use_batched: bool = True):
+def transcribe_audio_with_model(model, audio_path, *, language="auto", task="transcribe", use_batched: bool = True, model_path: str = ""):
     if not os.path.exists(audio_path):
         raise FileNotFoundError(f"Audio not found at {audio_path}")
 
     normalized_language = _normalize_language(language)
+    if str(task or "transcribe").strip().lower() != "transcribe":
+        raise ValueError("The locked Faster-Whisper path only supports task='transcribe'.")
+    config = describe_whisper_configuration(
+        model_path or str(getattr(model, "_capcap_model_name", "") or "medium"),
+        language=normalized_language,
+        model=model,
+        use_batched=use_batched,
+    )
     transcribe_kwargs = {
         "language": normalized_language,
-        "task": task,
-        "vad_filter": True,
-        "beam_size": 5,
-        "word_timestamps": True,
+        "task": config["task"],
+        "vad_filter": config["vad_filter"],
+        "beam_size": config["beam_size"],
+        "word_timestamps": config["word_timestamps"],
     }
 
     with _WHISPER_TRANSCRIBE_LOCK:
@@ -475,26 +513,39 @@ def transcribe_audio_with_model(model, audio_path, *, language="auto", task="tra
             segments, _info = _transcribe_with_vad_fallback(model.transcribe, audio_path, transcribe_kwargs)
             raw_segments = list(segments)
 
-    return [
-        {
+    output = []
+    for segment in raw_segments:
+        text = str(getattr(segment, "text", "") or "").strip()
+        if not text:
+            continue
+        avg_logprob = getattr(segment, "avg_logprob", None)
+        confidence = None
+        if avg_logprob is not None:
+            try:
+                confidence = max(0.0, min(1.0, math.exp(float(avg_logprob))))
+            except (TypeError, ValueError, OverflowError):
+                confidence = None
+        output.append({
             "start": float(segment.start),
             "end": float(segment.end),
-            "text": segment.text.strip(),
+            "text": text,
+            "source_language": normalized_language,
+            "confidence": confidence,
+            "asr_provenance": dict(config),
             "words": [
                 {
                     "start": float(word.start),
                     "end": float(word.end),
                     "text": str(word.word or "").strip(),
+                    "confidence": getattr(word, "probability", None),
                 }
                 for word in (segment.words or [])
                 if getattr(word, "start", None) is not None
                 and getattr(word, "end", None) is not None
                 and str(getattr(word, "word", "") or "").strip()
             ],
-        }
-        for segment in raw_segments
-        if segment.text and segment.text.strip()
-    ]
+        })
+    return output
 
 
 def transcribe_audio(audio_path, model_path, whisper_path=None, language="auto", task="transcribe"):
@@ -511,10 +562,14 @@ def transcribe_audio(audio_path, model_path, whisper_path=None, language="auto",
     if not os.path.exists(audio_path):
         raise FileNotFoundError(f"Audio not found at {audio_path}")
 
+    normalized_language = _normalize_language(language)
     model_name = _resolve_model_name(model_path)
     model = load_whisper_model(model_path)
+    setattr(model, "_capcap_model_name", str(model_name))
     try:
-        return transcribe_audio_with_model(model, audio_path, language=language, task=task)
+        return transcribe_audio_with_model(
+            model, audio_path, language=normalized_language, task=task, model_path=model_path
+        )
     except RuntimeError as exc:
         message = str(exc)
         if "cublas64_12.dll" in message or "cannot be loaded" in message:
@@ -527,7 +582,15 @@ def transcribe_audio(audio_path, model_path, whisper_path=None, language="auto",
                 cpu_kwargs["download_root"] = _faster_whisper_cache_dir()
             from faster_whisper import WhisperModel
             cpu_model = WhisperModel(model_name, **cpu_kwargs)
-            return transcribe_audio_with_model(cpu_model, audio_path, language=language, task=task)
+            setattr(cpu_model, "_capcap_runtime_device", "cpu")
+            setattr(cpu_model, "_capcap_model_name", str(model_name))
+            return transcribe_audio_with_model(
+                cpu_model,
+                audio_path,
+                language=normalized_language,
+                task=task,
+                model_path=model_path,
+            )
         raise
 
 if __name__ == "__main__":

@@ -10,12 +10,40 @@ class SegmentMappingError(ValueError):
 
 
 class SegmentService:
-    def transcript_dicts_to_models(self, raw_segments: list[dict[str, Any]]) -> list[Segment]:
+    def transcript_dicts_to_models(
+        self,
+        raw_segments: list[dict[str, Any]],
+        *,
+        source_language: str = "",
+        asr_provenance: dict[str, Any] | None = None,
+    ) -> list[Segment]:
         models = [
-            Segment.from_transcript_dict(raw_segment, segment_id=index)
+            self._transcript_to_model(
+                raw_segment,
+                segment_id=index,
+                source_language=source_language,
+                asr_provenance=asr_provenance,
+            )
             for index, raw_segment in enumerate(raw_segments or [], start=1)
         ]
         return validate_segments(models)
+
+    @staticmethod
+    def _transcript_to_model(
+        raw_segment: dict[str, Any],
+        *,
+        segment_id: int,
+        source_language: str,
+        asr_provenance: dict[str, Any] | None,
+    ) -> Segment:
+        payload = dict(raw_segment or {})
+        payload.setdefault("source_language", source_language)
+        provenance = dict(payload.get("provenance", {}) or {})
+        record = dict(payload.pop("asr_provenance", {}) or asr_provenance or {})
+        if record:
+            provenance["asr"] = record
+        payload["provenance"] = provenance
+        return Segment.from_transcript_dict(payload, segment_id=segment_id)
 
     def segment_dicts_to_models(
         self, segments: list[dict[str, Any]], *, translated: bool = False

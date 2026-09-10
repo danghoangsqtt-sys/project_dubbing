@@ -496,6 +496,7 @@ class ProjectService:
         whisper_model: str,
         source_language: str = "auto",
         audio_handling_mode: str = "fast",
+        asr_config: dict[str, Any] | None = None,
     ) -> str:
         return self._hash_payload(
             {
@@ -503,5 +504,6 @@ class ProjectService:
                 "whisper_model": str(whisper_model or "").strip(),
                 "source_language": str(source_language or "auto").strip().lower(),
                 "audio_handling_mode": str(audio_handling_mode or "fast").strip().lower(),
+                "asr_config": dict(asr_config or {}),
             }
         )
